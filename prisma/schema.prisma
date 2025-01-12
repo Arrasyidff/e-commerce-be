@@ -23,3 +23,27 @@ model User {
 
   @@map("users")
 }
+
+model Category {
+  id String @id @default(uuid())
+  name String @db.VarChar(100) @unique
+  created_at DateTime @default(now())
+  
+  product Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id String @id @default(uuid())
+  name String @db.VarChar(100)
+  description String @db.Text
+  price Decimal @db.Decimal(10, 2)
+  stock Int @db.Integer @default(0)
+  categoryId String?
+  created_at DateTime @default(now())
+
+  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull, onUpdate: SetNull)
+
+  @@map("products")
+}

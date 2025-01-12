@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../src/common/prisma.service';
 import * as bcrypt from 'bcrypt';
-import { User } from '@prisma/client';
+import { Category, User } from '@prisma/client';
 
 @Injectable()
 export class TestService {
@@ -25,6 +25,24 @@ export class TestService {
   async getUser(): Promise<User> {
     return await this.prismaService.user.findFirst({
       where: { username: 'test' },
+    });
+  }
+
+  async deleteCategory() {
+    await this.prismaService.category.deleteMany({ where: { name: {contains: 'test'} } });
+  }
+
+  async createCategory() {
+    await this.prismaService.category.create({
+      data: {
+        name: 'test',
+      },
+    });
+  }
+
+  async getCategory(): Promise<Category> {
+    return await this.prismaService.category.findUnique({
+      where: { name: 'test' },
     });
   }
 }
