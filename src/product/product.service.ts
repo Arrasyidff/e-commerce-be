@@ -48,4 +48,26 @@ export class ProductService {
       categoryId: product.categoryId
     }
   }
+
+  async get(productId: string): Promise<ProductResponse>
+  {
+    this.logger.info(`Get one product ${JSON.stringify(productId)}`);
+
+    const product = await this.prismaService.product.findUnique({
+      where: {id: productId}
+    })
+
+    if (!product) {
+      throw new HttpException('Product is not found', 404)
+    }
+
+    return {
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      price: product.price.toString(),
+      stock: product.stock,
+      categoryId: product.categoryId
+    }
+  }
 }

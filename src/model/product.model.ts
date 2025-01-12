@@ -12,5 +12,5 @@ export class ProductResponse {
   description: string;
   price: string;
   stock: number;
-  categoryId: string;
+  categoryId?: string;
 }

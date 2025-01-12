@@ -91,4 +91,41 @@ describe('Product Controller', () => {
       expect(response.body.data.categoryId).toBe(category.id);
     })
   })
+
+  describe('POST /api/products', () => {
+    beforeEach(async () => {
+      await testService.deleteCategory()
+      await testService.deleteProduct()
+
+      await testService.createProduct()
+    })
+
+    it('should be rejected if product is not found', async () => {
+      const product = await testService.getProduct()
+      const response = await request(app.getHttpServer())
+        .get('/api/products/'+(product.id+'asc'))
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(404);
+      expect(response.body.errors).toBeDefined();
+    })
+
+    it('should be get product', async () => {
+      const product = await testService.getProduct()
+      const response = await request(app.getHttpServer())
+        .get('/api/products/'+product.id)
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toBeDefined();
+      expect(response.body.data.id).toBeDefined();
+      expect(response.body.data.name).toBeDefined();
+      expect(response.body.data.description).toBeDefined();
+      expect(response.body.data.price).toBeDefined();
+      expect(response.body.data.stock).toBeDefined();
+      expect(response.body.data.categoryId).toBeDefined();
+    })
+  })
 });
