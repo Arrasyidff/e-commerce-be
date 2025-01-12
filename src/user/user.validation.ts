@@ -9,4 +9,9 @@ export class UserValidation {
     password: z.string().min(1).max(255),
     role: z.string().min(1).max(20).optional(),
   });
+
+  static readonly LOGIN: ZodType = z.object({
+    email: z.string().min(1).max(100).email(),
+    password: z.string().min(1).max(255),
+  });
 }
