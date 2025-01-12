@@ -2,10 +2,12 @@ import { HttpException, Inject, Injectable } from "@nestjs/common";
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { PrismaService } from "../common/prisma.service";
 import { ValidationService } from "../common/validation.service";
-import { RegisterUserRequest, UserResponse } from "src/model/user.model";
+import { LoginUserRequest, RegisterUserRequest, UserResponse } from "src/model/user.model";
 import { Logger } from "winston";
 import { UserValidation } from "./user.validation";
 import * as bcrypt from 'bcrypt'
+import * as jwt from 'jsonwebtoken'
+import { User } from "@prisma/client";
 
 @Injectable()
 export class UserService {
@@ -19,7 +21,7 @@ export class UserService {
   {
     this.logger.info(`Register new user ${JSON.stringify(request)}`);
 
-    const registerUserRequest = this.validationService.validate(
+    const registerUserRequest : RegisterUserRequest = this.validationService.validate(
       UserValidation.REGISTER,
       request
     )
@@ -45,6 +47,44 @@ export class UserService {
       username: user.username,
       email: user.email,
       role: user.role
+    }
+  }
+
+  async login(request: LoginUserRequest): Promise<UserResponse>
+  {
+    const loginUserRequest : LoginUserRequest = this.validationService.validate(
+      UserValidation.LOGIN,
+      request
+    )
+
+    const user = await this.prismaService.user.findUnique({
+      where: {email: loginUserRequest.email}
+    })
+
+    if (!user) {
+      throw new HttpException('User is not found', 404)
+    }
+
+    const isPasswordValid = await bcrypt.compare(
+      loginUserRequest.password,
+      user.password
+    )
+
+    if (!isPasswordValid) {
+      throw new HttpException('Email or password is invalid', 401);
+    }
+
+    const token = await jwt.sign(
+      {id: user.id, email: user.email},
+      'secret',
+      {expiresIn: '1h'}
+    )
+
+    return {
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      token: token,
     }
   }
 }
