@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../src/common/prisma.service';
 import * as bcrypt from 'bcrypt';
-import { Category, User } from '@prisma/client';
+import { Category, Product, User } from '@prisma/client';
 
 @Injectable()
 export class TestService {
@@ -42,6 +42,31 @@ export class TestService {
 
   async getCategory(): Promise<Category> {
     return await this.prismaService.category.findUnique({
+      where: { name: 'test' },
+    });
+  }
+
+  async deleteProduct() {
+    await this.prismaService.product.deleteMany({ where: { name: {contains: 'test'} } });
+  }
+
+  async createProduct() {
+    await this.createCategory();
+    const category = await this.getCategory()
+
+    await this.prismaService.product.create({
+      data: {
+        name: 'test',
+        description: 'test',
+        price: 10.99,
+        stock: 10,
+        categoryId: category.id,
+      },
+    });
+  }
+
+  async getProduct(): Promise<Product> {
+    return await this.prismaService.product.findFirst({
       where: { name: 'test' },
     });
   }
