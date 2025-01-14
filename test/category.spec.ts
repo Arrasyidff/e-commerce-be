@@ -73,4 +73,190 @@ describe('Category Controller', () => {
       expect(response.body.errors).toBeDefined();
     })
   })
+
+  describe('GET /api/categories', () => {
+    beforeEach(async () => {
+      await testService.deleteCategory()
+
+      await testService.createCategory()
+    })
+
+    it('should be able get categories', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/api/categories')
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toBeDefined();
+      expect(response.body.data.length).toEqual(1);
+      expect(response.body.data[0].id).toBeDefined();
+      expect(response.body.data[0].name).toBeDefined();
+    })
+  })
+
+  describe('GET /api/categories/:id', () => {
+    beforeEach(async () => {
+      await testService.deleteCategory()
+
+      await testService.createCategory()
+    })
+
+    it('should be reject if category is not found', async () => {
+      const category = await testService.getCategory()
+      const response = await request(app.getHttpServer())
+        .get(`/api/categories/${category.id}asc`)
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(404);
+      expect(response.body.errors).toBeDefined();
+    })
+
+    it('should be able get category', async () => {
+      const category = await testService.getCategory()
+      const response = await request(app.getHttpServer())
+        .get(`/api/categories/${category.id}`)
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toBeDefined();
+      expect(response.body.data.id).toBeDefined();
+      expect(response.body.data.name).toBeDefined();
+    })
+  })
+
+  describe('PATCH /api/categories/:id', () => {
+    beforeEach(async () => {
+      await testService.deleteCategory()
+      await testService.deleteUser()
+
+      await testService.createCategory()
+      await testService.createUser(null, null, 'admin')
+    })
+
+    it('should be reject if user is not admin', async () => {
+      await testService.createUser('test123', 'test123@mail.com')
+      const user = await testService.getUser('test123')
+      const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
+
+      const category = await testService.getCategory()
+      const response = await request(app.getHttpServer())
+        .patch(`/api/categories/${category.id}`)
+        .set('authorization', token);
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(403);
+      expect(response.body.errors).toBeDefined();
+    })
+
+    it('should be reject if category is not found', async () => {
+      const user = await testService.getUser()
+      const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
+
+      const category = await testService.getCategory()
+      const response = await request(app.getHttpServer())
+        .patch(`/api/categories/${category.id}asc`)
+        .set('authorization', token);
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(404);
+      expect(response.body.errors).toBeDefined();
+    })
+
+    it('should be reject if request is invalid', async () => {
+      const user = await testService.getUser()
+      const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
+
+      const category = await testService.getCategory()
+      const response = await request(app.getHttpServer())
+        .patch(`/api/categories/${category.id}`)
+        .set('authorization', token)
+        .send({
+          name: ''
+        });
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(400);
+      expect(response.body.errors).toBeDefined();
+    })
+
+    it('should be able update category', async () => {
+      const user = await testService.getUser()
+      const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
+
+      const category = await testService.getCategory()
+      const response = await request(app.getHttpServer())
+        .patch(`/api/categories/${category.id}`)
+        .set('authorization', token)
+        .send({
+          name: 'test'
+        });
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toBeDefined();
+    })
+  })
+
+  describe('DELETE /api/categories/:id', () => {
+    beforeEach(async () => {
+      await testService.deleteCategory()
+      await testService.deleteUser()
+
+      await testService.createCategory()
+      await testService.createUser(null, null, 'admin')
+    })
+
+    it('should be reject if user is not admin', async () => {
+      await testService.createUser('test123', 'test123@mail.com')
+      const user = await testService.getUser('test123')
+      const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
+
+      const category = await testService.getCategory()
+      const response = await request(app.getHttpServer())
+        .delete(`/api/categories/${category.id}`)
+        .set('authorization', token);
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(403);
+      expect(response.body.errors).toBeDefined();
+    })
+
+    it('should be reject if category is not found', async () => {
+      const user = await testService.getUser()
+      const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
+
+      const category = await testService.getCategory()
+      const response = await request(app.getHttpServer())
+        .delete(`/api/categories/${category.id}asc`)
+        .set('authorization', token);
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(404);
+      expect(response.body.errors).toBeDefined();
+    })
+
+    it('should be able delete category', async () => {
+      const user = await testService.getUser()
+      const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
+
+      const category = await testService.getCategory()
+      const response = await request(app.getHttpServer())
+        .delete(`/api/categories/${category.id}`)
+        .set('authorization', token)
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toBeDefined();
+    })
+  })
 });
