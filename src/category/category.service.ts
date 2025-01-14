@@ -55,4 +55,19 @@ export class CategoryService {
 
     return categories.map((category: Category) => this.toCategoryResponse(category))
   }
+
+  async get(id: string): Promise<CategoryResponse>
+  {
+    this.logger.info(`get category by id ${id}`);
+
+    const category = await this.prismaService.category.findUnique({
+      where: {id: id}
+    })
+
+    if (!category) {
+      throw new HttpException('Category is not found', 404)
+    }
+
+    return this.toCategoryResponse(category)
+  }
 }

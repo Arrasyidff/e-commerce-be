@@ -94,4 +94,36 @@ describe('Category Controller', () => {
       expect(response.body.data[0].name).toBeDefined();
     })
   })
+
+  describe('GET /api/categories/:id', () => {
+    beforeEach(async () => {
+      await testService.deleteCategory()
+
+      await testService.createCategory()
+    })
+
+    it('should be reject if category is not found', async () => {
+      const category = await testService.getCategory()
+      const response = await request(app.getHttpServer())
+        .get(`/api/categories/${category.id}asc`)
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(404);
+      expect(response.body.errors).toBeDefined();
+    })
+
+    it('should be able get category', async () => {
+      const category = await testService.getCategory()
+      const response = await request(app.getHttpServer())
+        .get(`/api/categories/${category.id}`)
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toBeDefined();
+      expect(response.body.data.id).toBeDefined();
+      expect(response.body.data.name).toBeDefined();
+    })
+  })
 });
