@@ -17,6 +17,16 @@ export class UserService {
     private prismaService: PrismaService
   ) {}
 
+  toUserResponse(user: User): UserResponse
+  {
+    return {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role
+    }
+  }
+
   async register(request: RegisterUserRequest): Promise<UserResponse>
   {
     this.logger.info(`Register new user ${JSON.stringify(request)}`);
@@ -43,11 +53,7 @@ export class UserService {
       data: registerUserRequest
     })
 
-    return {
-      username: user.username,
-      email: user.email,
-      role: user.role
-    }
+    return this.toUserResponse(user)
   }
 
   async login(request: LoginUserRequest): Promise<UserResponse>
@@ -77,14 +83,29 @@ export class UserService {
     const token = await jwt.sign(
       {id: user.id, email: user.email},
       'secret',
-      {expiresIn: '1h'}
+      // {expiresIn: '1h'}
     )
 
-    return {
-      username: user.username,
-      email: user.email,
-      role: user.role,
-      token: token,
+    return {...this.toUserResponse(user), token: token}
+  }
+
+  async getAll(user: User): Promise<UserResponse[]>
+  {
+    if (user.role !== 'admin') {
+      throw new HttpException('Access denied', 403)
     }
+
+    const users = await this.prismaService.user.findMany()
+    return users.map((user: User) => this.toUserResponse(user))
+  }
+
+  async get(id: string): Promise<UserResponse>
+  {
+    const user = await this.prismaService.user.findUnique({where: {id: id}})
+    if (!user) {
+      throw new HttpException('User is not found', 404)
+    }
+
+    return this.toUserResponse(user)
   }
 }

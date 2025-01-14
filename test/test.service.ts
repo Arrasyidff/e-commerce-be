@@ -2,29 +2,47 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../src/common/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { Category, Product, User } from '@prisma/client';
+import * as jwt from 'jsonwebtoken'
 
 @Injectable()
 export class TestService {
   constructor(private prismaService: PrismaService) {}
 
+  async generateTestToken(
+    payload: Record<string, any>,
+    secret: string|null = 'your-secret-key'
+    // expiresIn: string|null = '1h'
+  ): Promise<string>
+  {
+    return jwt.sign(
+      payload,
+      secret,
+      // { expiresIn }
+    );
+  };
+
   async deleteUser() {
-    await this.prismaService.user.deleteMany({ where: { username: {contains: 'test'} } });
+    await this.prismaService.user.deleteMany({ where: { email: {contains: 'test'} } });
   }
 
-  async createUser() {
+  async createUser(
+    username?: string|null,
+    email?: string|null,
+    role?: string|null
+  ) {
     await this.prismaService.user.create({
       data: {
-        username: 'test',
-        email: 'test@mail.com',
+        username: username || 'test',
+        email: email || 'test@mail.com',
         password: await bcrypt.hash('test', 10),
-        role: 'test',
+        role: role || 'test',
       },
     });
   }
 
-  async getUser(): Promise<User> {
+  async getUser(username?: string|null): Promise<User> {
     return await this.prismaService.user.findFirst({
-      where: { username: 'test' },
+      where: { username: username || 'test' },
     });
   }
 
