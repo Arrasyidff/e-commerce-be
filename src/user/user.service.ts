@@ -2,7 +2,7 @@ import { HttpException, Inject, Injectable } from "@nestjs/common";
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { PrismaService } from "../common/prisma.service";
 import { ValidationService } from "../common/validation.service";
-import { LoginUserRequest, RegisterUserRequest, UserResponse } from "src/model/user.model";
+import { LoginUserRequest, RegisterUserRequest, UpdateUserRequest, UserResponse } from "src/model/user.model";
 import { Logger } from "winston";
 import { UserValidation } from "./user.validation";
 import * as bcrypt from 'bcrypt'
@@ -16,6 +16,16 @@ export class UserService {
     @Inject(WINSTON_MODULE_PROVIDER) private logger: Logger,
     private prismaService: PrismaService
   ) {}
+
+  toUserResponse(user: User): UserResponse
+  {
+    return {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role
+    }
+  }
 
   async register(request: RegisterUserRequest): Promise<UserResponse>
   {
@@ -43,11 +53,7 @@ export class UserService {
       data: registerUserRequest
     })
 
-    return {
-      username: user.username,
-      email: user.email,
-      role: user.role
-    }
+    return this.toUserResponse(user)
   }
 
   async login(request: LoginUserRequest): Promise<UserResponse>
@@ -77,14 +83,98 @@ export class UserService {
     const token = await jwt.sign(
       {id: user.id, email: user.email},
       'secret',
-      {expiresIn: '1h'}
+      // {expiresIn: '1h'}
     )
 
-    return {
-      username: user.username,
-      email: user.email,
-      role: user.role,
-      token: token,
+    return {...this.toUserResponse(user), token: token}
+  }
+
+  async getAll(user: User): Promise<UserResponse[]>
+  {
+    if (user.role !== 'admin') {
+      throw new HttpException('Access denied', 403)
     }
+
+    const users = await this.prismaService.user.findMany()
+    return users.map((user: User) => this.toUserResponse(user))
+  }
+
+  async get(id: string): Promise<UserResponse>
+  {
+    const user = await this.prismaService.user.findUnique({where: {id: id}})
+    if (!user) {
+      throw new HttpException('User is not found', 404)
+    }
+
+    return this.toUserResponse(user)
+  }
+
+  async update(request: UpdateUserRequest): Promise<UserResponse>
+  {
+    const updateUserRequest: UpdateUserRequest = this.validationService.validate(
+      UserValidation.UPDATE,
+      request
+    )
+
+    let user = await this.prismaService.user.findUnique({where: {id: updateUserRequest.id}})
+    if (!user) {
+      throw new HttpException('User is not found', 404)
+    }
+
+    if (updateUserRequest.email) {
+      let userEmailExists = await this.prismaService.user.findFirst({
+        where: {
+          email: updateUserRequest.email,
+          id: {not: user.id}
+        }
+      })
+      if (userEmailExists) {
+        throw new HttpException('Email already exists', 400)
+      }
+      user.email = updateUserRequest.email
+    }
+
+    if (updateUserRequest.username) {
+      user.username = updateUserRequest.username
+    }
+
+    if (updateUserRequest.password) {
+      user.password = await bcrypt.hash(
+        updateUserRequest.password,
+        10
+      )
+    }
+
+    if (updateUserRequest.role) {
+      user.role = updateUserRequest.role
+    }
+
+    user = await this.prismaService.user.update({
+      where: {id: updateUserRequest.id},
+      data: updateUserRequest
+    })
+
+    return this.toUserResponse(user)
+  }
+
+  async delete(userLogin: User, id: string): Promise<UserResponse>
+  {
+    if (userLogin.role !== 'admin') {
+      throw new HttpException('Access denied', 403)
+    }
+
+    const user = await this.prismaService.user.findUnique({
+      where: {id: id}
+    })
+
+    if (!user) {
+      throw new HttpException('User is not found', 404)
+    }
+
+    await this.prismaService.user.delete({
+      where: {id: id}
+    })
+
+    return this.toUserResponse(user)
   }
 }

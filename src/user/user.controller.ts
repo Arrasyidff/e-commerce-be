@@ -1,7 +1,9 @@
-import { Body, Controller, HttpCode, Post } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put } from "@nestjs/common";
 import { UserService } from "./user.service";
-import { LoginUserRequest, RegisterUserRequest, UserResponse } from "../model/user.model";
+import { LoginUserRequest, RegisterUserRequest, UpdateUserRequest, UserResponse } from "../model/user.model";
 import { WebResponse } from "../model/web.model";
+import { Auth } from "../common/auth.decorator";
+import { User } from "@prisma/client";
 
 @Controller('api/users/')
 export class UserController {
@@ -26,6 +28,53 @@ export class UserController {
     const response = await this.userService.login(request)
     return {
       data: response
+    }
+  }
+
+  @Get()
+  @HttpCode(200)
+  async getAll(
+    @Auth() user: User
+  ): Promise<WebResponse<UserResponse[]>> {
+    const response = await this.userService.getAll(user)
+    return {
+      data: response
+    }
+  }
+
+  @Get(':id')
+  @HttpCode(200)
+  async get(
+    @Param('id') id: string
+  ): Promise<WebResponse<UserResponse>> {
+    const response = await this.userService.get(id)
+    return {
+      data: response
+    }
+  }
+
+  @Patch(':id')
+  @HttpCode(200)
+  async update(
+    @Param('id') id: string,
+    @Body() request: UpdateUserRequest
+  ): Promise<WebResponse<UserResponse>> {
+    request.id = id;
+    const response = await this.userService.update(request);
+    return {
+      data: response
+    }
+  }
+
+  @Delete(':id')
+  @HttpCode(200)
+  async delete(
+    @Auth() user: User,
+    @Param('id') id: string
+  ): Promise<WebResponse<string>> {
+    await this.userService.delete(user, id);
+    return {
+      data: 'Ok'
     }
   }
 }

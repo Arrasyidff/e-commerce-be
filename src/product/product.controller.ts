@@ -5,14 +5,14 @@ import { ProductResponse, CreateProductRequest } from "../model/product.model";
 
 @Controller('api/products/')
 export class ProductController {
-  constructor(private ProductService: ProductService) {}
+  constructor(private productService: ProductService) {}
 
   @Post()
   @HttpCode(201)
   async create(
     @Body() request: CreateProductRequest
   ): Promise<WebResponse<ProductResponse>> {
-    const response = await this.ProductService.create(request)
+    const response = await this.productService.create(request)
     return {
       data: response
     }
@@ -23,7 +23,7 @@ export class ProductController {
   async get(
     @Param('categoryId') categoryId: string
   ): Promise<WebResponse<ProductResponse>> {
-    const response = await this.ProductService.get(categoryId)
+    const response = await this.productService.get(categoryId)
     return {
       data: response
     }
