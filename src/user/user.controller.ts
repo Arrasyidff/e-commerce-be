@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Param, Patch, Post, Put } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put } from "@nestjs/common";
 import { UserService } from "./user.service";
 import { LoginUserRequest, RegisterUserRequest, UpdateUserRequest, UserResponse } from "../model/user.model";
 import { WebResponse } from "../model/web.model";
@@ -63,6 +63,18 @@ export class UserController {
     const response = await this.userService.update(request);
     return {
       data: response
+    }
+  }
+
+  @Delete(':id')
+  @HttpCode(200)
+  async delete(
+    @Auth() user: User,
+    @Param('id') id: string
+  ): Promise<WebResponse<string>> {
+    await this.userService.delete(user, id);
+    return {
+      data: 'Ok'
     }
   }
 }

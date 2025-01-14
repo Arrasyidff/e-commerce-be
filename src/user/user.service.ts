@@ -156,4 +156,25 @@ export class UserService {
 
     return this.toUserResponse(user)
   }
+
+  async delete(userLogin: User, id: string): Promise<UserResponse>
+  {
+    if (userLogin.role !== 'admin') {
+      throw new HttpException('Access denied', 403)
+    }
+
+    const user = await this.prismaService.user.findUnique({
+      where: {id: id}
+    })
+
+    if (!user) {
+      throw new HttpException('User is not found', 404)
+    }
+
+    await this.prismaService.user.delete({
+      where: {id: id}
+    })
+
+    return this.toUserResponse(user)
+  }
 }

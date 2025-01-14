@@ -341,4 +341,73 @@ describe('User Controller', () => {
       expect(response.body.errors).toBeDefined();
     });
   })
+
+  describe('DELETE /api/users', () => {
+    beforeEach(async () => {
+      await testService.deleteUser()
+
+      await testService.createUser(null, null, 'admin');
+    })
+
+    it('should be rejected if user is not admin', async () => {
+      await testService.createUser('test123', 'test123@mail.com')
+      const userLogin = await testService.getUser('test123')
+      const token = await testService.generateTestToken({
+        id: userLogin.id,
+        email: userLogin.email},
+        'secret'
+      )
+
+      const user = await testService.getUser()
+      const response = await request(app.getHttpServer())
+        .delete(`/api/users/${user.id}`)
+        .set('authorization', token);
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(403);
+      expect(response.body.errors).toBeDefined();
+    })
+
+    it('should be rejected if user is not found', async () => {
+      await testService.createUser('test123', 'test123@mail.com', 'admin')
+      const userLogin = await testService.getUser('test123')
+      const token = await testService.generateTestToken({
+        id: userLogin.id,
+        email: userLogin.email},
+        'secret'
+      )
+
+      const user = await testService.getUser()
+      const response = await request(app.getHttpServer())
+        .delete(`/api/users/${user.id}asc`)
+        .set('authorization', token);
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(404);
+      expect(response.body.errors).toBeDefined();
+    })
+
+    it('should be able to delete', async () => {
+      await testService.createUser('test123', 'test123@mail.com', 'admin')
+      const userLogin = await testService.getUser('test123')
+      const token = await testService.generateTestToken({
+        id: userLogin.id,
+        email: userLogin.email},
+        'secret'
+      )
+
+      const user = await testService.getUser()
+      const response = await request(app.getHttpServer())
+        .delete(`/api/users/${user.id}`)
+        .set('authorization', token);
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toBeDefined();
+      expect(response.body.data).toEqual('Ok');
+    })
+  })
 });
