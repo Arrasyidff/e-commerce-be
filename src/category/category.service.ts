@@ -3,9 +3,9 @@ import { ValidationService } from "../common/validation.service";
 import { PrismaService } from "../common/prisma.service";
 import { HttpException, Inject, Injectable } from "@nestjs/common";
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
-import { CategoryResponse, CreateCategoryRequest } from "../model/category.model";
+import { CategoryResponse, CreateCategoryRequest, UpdateCategoryRequest } from "../model/category.model";
 import { CategoryValidation } from "./category.validation";
-import { Category } from "@prisma/client";
+import { Category, User } from "@prisma/client";
 
 @Injectable()
 export class CategoryService {
@@ -67,6 +67,39 @@ export class CategoryService {
     if (!category) {
       throw new HttpException('Category is not found', 404)
     }
+
+    return this.toCategoryResponse(category)
+  }
+
+  async update(user: User, request: UpdateCategoryRequest): Promise<CategoryResponse>
+  {
+    this.logger.info(`update category ${JSON.stringify(request)}`);
+
+    if (user.role !== 'admin') {
+      throw new HttpException('Access denied', 403);
+    }
+
+    const updateCategoryRequest : UpdateCategoryRequest = this.validationService.validate(
+      CategoryValidation.UPDATE,
+      request
+    )
+
+    let category = await this.prismaService.category.findUnique({
+      where: {id: updateCategoryRequest.id}
+    })
+
+    if (!category) {
+      throw new HttpException('Category is not found', 404)
+    }
+
+    if (updateCategoryRequest.name) {
+      category.name = updateCategoryRequest.name
+    }
+
+    category = await this.prismaService.category.update({
+      where: {id: updateCategoryRequest.id},
+      data: updateCategoryRequest
+    })
 
     return this.toCategoryResponse(category)
   }
