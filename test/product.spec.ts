@@ -92,7 +92,64 @@ describe('Product Controller', () => {
     })
   })
 
-  describe('POST /api/products', () => {
+  describe('GET /api/products', () => {
+    beforeEach(async () => {
+      await testService.deleteCategory()
+      await testService.deleteProduct()
+
+      await testService.createProduct()
+    })
+
+    it('should be able get products', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/api/products')
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toBeDefined();
+      expect(response.body.data[0].id).toBeDefined();
+      expect(response.body.data[0].name).toBeDefined();
+      expect(response.body.data[0].description).toBeDefined();
+      expect(response.body.data[0].price).toBeDefined();
+      expect(response.body.data[0].stock).toBeDefined();
+      expect(response.body.data[0].categoryId).toBeDefined();
+    })
+
+    it('should be able get products filter by name', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/api/products?name=test')
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toBeDefined();
+      expect(response.body.data[0].id).toBeDefined();
+      expect(response.body.data[0].name).toBeDefined();
+      expect(response.body.data[0].description).toBeDefined();
+      expect(response.body.data[0].price).toBeDefined();
+      expect(response.body.data[0].stock).toBeDefined();
+      expect(response.body.data[0].categoryId).toBeDefined();
+    })
+
+    it('should be able get products filter by price', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/api/products?price=10.99')
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toBeDefined();
+      expect(response.body.data[0].id).toBeDefined();
+      expect(response.body.data[0].name).toBeDefined();
+      expect(response.body.data[0].description).toBeDefined();
+      expect(response.body.data[0].price).toBeDefined();
+      expect(response.body.data[0].stock).toBeDefined();
+      expect(response.body.data[0].categoryId).toBeDefined();
+    })
+  })
+
+  describe('GET /api/products/:id', () => {
     beforeEach(async () => {
       await testService.deleteCategory()
       await testService.deleteProduct()
