@@ -73,4 +73,25 @@ describe('Category Controller', () => {
       expect(response.body.errors).toBeDefined();
     })
   })
+
+  describe('GET /api/categories', () => {
+    beforeEach(async () => {
+      await testService.deleteCategory()
+
+      await testService.createCategory()
+    })
+
+    it('should be able get categories', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/api/categories')
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toBeDefined();
+      expect(response.body.data.length).toEqual(1);
+      expect(response.body.data[0].id).toBeDefined();
+      expect(response.body.data[0].name).toBeDefined();
+    })
+  })
 });

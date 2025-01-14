@@ -5,6 +5,7 @@ import { HttpException, Inject, Injectable } from "@nestjs/common";
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { CategoryResponse, CreateCategoryRequest } from "../model/category.model";
 import { CategoryValidation } from "./category.validation";
+import { Category } from "@prisma/client";
 
 @Injectable()
 export class CategoryService {
@@ -13,6 +14,14 @@ export class CategoryService {
     @Inject(WINSTON_MODULE_PROVIDER) private logger: Logger,
     private prismaService: PrismaService
   ) {}
+
+  toCategoryResponse(category: Category): CategoryResponse
+  {
+    return {
+      id: category.id,
+      name: category.name
+    }
+  }
 
   async create(request: CreateCategoryRequest): Promise<CategoryResponse>
   {
@@ -35,9 +44,15 @@ export class CategoryService {
       data: createCategoryRequest
     })
 
-    return {
-      id: category.id,
-      name: category.name,
-    }
+    return this.toCategoryResponse(category)
+  }
+
+  async getAll(): Promise<CategoryResponse[]>
+  {
+    this.logger.info(`get all categories`);
+
+    const categories = await this.prismaService.category.findMany()
+
+    return categories.map((category: Category) => this.toCategoryResponse(category))
   }
 }
