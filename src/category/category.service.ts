@@ -103,4 +103,27 @@ export class CategoryService {
 
     return this.toCategoryResponse(category)
   }
+
+  async delete(user: User, id: string): Promise<CategoryResponse>
+  {
+    this.logger.info(`delete category id ${id}`);
+
+    if (user.role !== 'admin') {
+      throw new HttpException('Access denied', 403);
+    }
+
+    let category = await this.prismaService.category.findUnique({
+      where: {id: id}
+    })
+
+    if (!category) {
+      throw new HttpException('Category is not found', 404)
+    }
+
+    await this.prismaService.category.delete({
+      where: {id: id}
+    })
+
+    return this.toCategoryResponse(category)
+  }
 }

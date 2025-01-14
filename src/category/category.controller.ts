@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Param, Patch, Post } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post } from "@nestjs/common";
 import { WebResponse } from "../model/web.model";
 import { CategoryService } from "./category.service";
 import { CategoryResponse, CreateCategoryRequest, UpdateCategoryRequest } from "../model/category.model";
@@ -51,6 +51,18 @@ export class CategoryController {
     const response = await this.categoryService.update(user, request)
     return {
       data: response
+    }
+  }
+
+  @Delete(':id')
+  @HttpCode(200)
+  async delete(
+    @Auth() user: User,
+    @Param('id') id: string,
+  ): Promise<WebResponse<string>> {
+    await this.categoryService.delete(user, id)
+    return {
+      data: "Ok"
     }
   }
 }
