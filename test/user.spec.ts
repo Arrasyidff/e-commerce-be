@@ -262,5 +262,83 @@ describe('User Controller', () => {
     })
   })
 
-  
+  describe('PATCH /api/users', () => {
+    beforeEach(async () => {
+      await testService.deleteUser()
+
+      await testService.createUser(null, null, 'admin');
+    })
+
+    it('should be rejected if user is not found', async () => {
+      const user = await testService.getUser()
+      const response = await request(app.getHttpServer())
+        .patch(`/api/users/${user.id}asc`)
+        .send({
+          username: 'test',
+          email: 'test@mail.com',
+          password: 'test',
+          role: 'test',
+        });
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(404);
+      expect(response.body.errors).toBeDefined();
+    })
+
+    it('should be rejected if request is invalid', async () => {
+      const user = await testService.getUser()
+      const response = await request(app.getHttpServer())
+        .patch(`/api/users/${user.id}`)
+        .send({
+          username: '',
+          email: '',
+          password: '',
+          role: ''
+        })
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(400);
+      expect(response.body.errors).toBeDefined();
+    })
+
+    it('should be able to update user', async () => {
+      const user = await testService.getUser()
+      const response = await request(app.getHttpServer())
+        .patch(`/api/users/${user.id}`)
+        .send({
+          username: 'test',
+          email: 'test@mail.com',
+          password: 'test',
+          role: 'test',
+        });
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toBeDefined();
+      expect(response.body.data.username).toBe('test');
+      expect(response.body.data.email).toBe('test@mail.com');
+      expect(response.body.data.role).toBe('test');
+    });
+
+    it('should be rejected if email already exists', async () => {
+      await testService.createUser(null, 'test123@mail.com');
+      const user = await testService.getUser()
+      const response = await request(app.getHttpServer())
+        .patch(`/api/users/${user.id}`)
+        .send({
+          username: 'test',
+          email: 'test123@mail.com',
+          password: 'test',
+          role: 'test'
+        });
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(400);
+      expect(response.body.errors).toBeDefined();
+    });
+  })
 });

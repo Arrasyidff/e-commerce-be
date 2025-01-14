@@ -2,7 +2,7 @@ import { HttpException, Inject, Injectable } from "@nestjs/common";
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { PrismaService } from "../common/prisma.service";
 import { ValidationService } from "../common/validation.service";
-import { LoginUserRequest, RegisterUserRequest, UserResponse } from "src/model/user.model";
+import { LoginUserRequest, RegisterUserRequest, UpdateUserRequest, UserResponse } from "src/model/user.model";
 import { Logger } from "winston";
 import { UserValidation } from "./user.validation";
 import * as bcrypt from 'bcrypt'
@@ -105,6 +105,54 @@ export class UserService {
     if (!user) {
       throw new HttpException('User is not found', 404)
     }
+
+    return this.toUserResponse(user)
+  }
+
+  async update(request: UpdateUserRequest): Promise<UserResponse>
+  {
+    const updateUserRequest: UpdateUserRequest = this.validationService.validate(
+      UserValidation.UPDATE,
+      request
+    )
+
+    let user = await this.prismaService.user.findUnique({where: {id: updateUserRequest.id}})
+    if (!user) {
+      throw new HttpException('User is not found', 404)
+    }
+
+    if (updateUserRequest.email) {
+      let userEmailExists = await this.prismaService.user.findFirst({
+        where: {
+          email: updateUserRequest.email,
+          id: {not: user.id}
+        }
+      })
+      if (userEmailExists) {
+        throw new HttpException('Email already exists', 400)
+      }
+      user.email = updateUserRequest.email
+    }
+
+    if (updateUserRequest.username) {
+      user.username = updateUserRequest.username
+    }
+
+    if (updateUserRequest.password) {
+      user.password = await bcrypt.hash(
+        updateUserRequest.password,
+        10
+      )
+    }
+
+    if (updateUserRequest.role) {
+      user.role = updateUserRequest.role
+    }
+
+    user = await this.prismaService.user.update({
+      where: {id: updateUserRequest.id},
+      data: updateUserRequest
+    })
 
     return this.toUserResponse(user)
   }

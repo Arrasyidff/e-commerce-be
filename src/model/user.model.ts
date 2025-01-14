@@ -17,3 +17,11 @@ export class LoginUserRequest {
   email: string;
   password: string;
 }
+
+export class UpdateUserRequest {
+  id: string;
+  username?: string | null;
+  email?: string | null;
+  password?: string | null;
+  role?: string | null;
+}
