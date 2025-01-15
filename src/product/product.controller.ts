@@ -1,7 +1,9 @@
-import { Body, Controller, Get, HttpCode, Param, ParseIntPipe, Post, Query } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, Param, ParseIntPipe, Patch, Post, Query } from "@nestjs/common";
 import { WebResponse } from "../model/web.model";
 import { ProductService } from "./product.service";
-import { ProductResponse, CreateProductRequest, FilterProductRequest } from "../model/product.model";
+import { ProductResponse, CreateProductRequest, FilterProductRequest, UpdateProductRequest } from "../model/product.model";
+import { User } from "@prisma/client";
+import { Auth } from "../common/auth.decorator";
 
 @Controller('api/products/')
 export class ProductController {
@@ -39,14 +41,40 @@ export class ProductController {
     return await this.productService.getAll(request);
   }
 
-  @Get(':categoryId')
+  @Get(':id')
   @HttpCode(200)
   async get(
-    @Param('categoryId') categoryId: string
+    @Param('id') id: string
   ): Promise<WebResponse<ProductResponse>> {
-    const response = await this.productService.get(categoryId)
+    const response = await this.productService.get(id)
     return {
       data: response
+    }
+  }
+
+  @Patch(':id')
+  @HttpCode(200)
+  async update(
+    @Auth() user: User,
+    @Param('id') id: string,
+    @Body() request: UpdateProductRequest
+  ): Promise<WebResponse<ProductResponse>> {
+    request.id = id
+    const response = await this.productService.update(user, request)
+    return {
+      data: response
+    }
+  }
+
+  @Delete(':id')
+  @HttpCode(200)
+  async delete(
+    @Auth() user: User,
+    @Param('id') id: string,
+  ): Promise<WebResponse<string>> {
+    await this.productService.delete(user, id)
+    return {
+      data: 'Ok'
     }
   }
 }

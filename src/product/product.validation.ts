@@ -21,4 +21,13 @@ export class ProductValidation {
     sortKey: z.string().optional(),
     sortOrder: z.number().positive().optional()
   });
+
+  static readonly UPDATE: ZodType = z.object({
+    id: z.string().min(1),
+    name: z.string().min(1).max(100).optional(),
+    description: z.string().min(1).max(100).optional(),
+    price: z.string().min(1).optional(),
+    stock: z.number().min(0).optional(),
+    categoryId: z.string().optional()
+  });
 }

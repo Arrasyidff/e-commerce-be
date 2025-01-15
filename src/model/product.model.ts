@@ -25,3 +25,12 @@ export class FilterProductRequest {
   sortKey: string;
   sortOrder: number;
 }
+
+export class UpdateProductRequest {
+  id: string;
+  name?: string;
+  description?: string;
+  price?: string;
+  stock?: number;
+  categoryId?: string;
+}

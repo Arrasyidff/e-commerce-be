@@ -185,4 +185,196 @@ describe('Product Controller', () => {
       expect(response.body.data.categoryId).toBeDefined();
     })
   })
+
+  describe('PATCH /api/products/:id', () => {
+    beforeEach(async () => {
+      await testService.deleteCategory()
+      await testService.deleteProduct()
+      await testService.deleteUser()
+
+      await testService.createProduct()
+    })
+
+    it('should be rejected if request is invalid', async () => {
+      await testService.createUser('test', 'test@mail.com')
+      const user = await testService.getUser('test')
+      const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
+
+      const product = await testService.getProduct()
+      const response = await request(app.getHttpServer())
+        .patch('/api/products/'+(product.id))
+        .set('authorization', token)
+        .send({
+          name: '',
+          description: '',
+          price: '',
+          stock: 0,
+          categoryId: '',
+        })
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(403);
+      expect(response.body.errors).toBeDefined();
+    })
+
+    it('should be rejected if user is not admin', async () => {
+      await testService.createUser('test', 'test@mail.com')
+      const user = await testService.getUser('test')
+      const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
+
+      const product = await testService.getProduct()
+      const response = await request(app.getHttpServer())
+        .patch('/api/products/'+(product.id))
+        .set('authorization', token)
+        .send({
+          name: 'test',
+          description: 'test',
+          price: '12.122',
+          stock: 1,
+          categoryId: 'test',
+        })
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(403);
+      expect(response.body.errors).toBeDefined();
+    })
+
+    it('should be rejected if product is not found', async () => {
+      await testService.createUser('test', 'test@mail.com', 'admin')
+      const user = await testService.getUser('test')
+      const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
+
+      const product = await testService.getProduct()
+      const category = await testService.getCategory()
+      const response = await request(app.getHttpServer())
+        .patch(`/api/products/${product.id}asc`)
+        .set('authorization', token)
+        .send({
+          name: 'test',
+          description: 'test',
+          price: '12.122',
+          stock: 1,
+          categoryId: category.id,
+        })
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(404);
+      expect(response.body.errors).toBeDefined();
+    })
+
+    it('should be rejected if category is not found', async () => {
+      await testService.createUser('test', 'test@mail.com', 'admin')
+      const user = await testService.getUser('test')
+      const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
+
+      const product = await testService.getProduct()
+      const response = await request(app.getHttpServer())
+        .patch('/api/products/'+(product.id))
+        .set('authorization', token)
+        .send({
+          name: 'test',
+          description: 'test',
+          price: '12.122',
+          stock: 1,
+          categoryId: 'test',
+        })
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(404);
+      expect(response.body.errors).toBeDefined();
+    })
+
+    it('should be able update product', async () => {
+      await testService.createUser('test', 'test@mail.com', 'admin')
+      const user = await testService.getUser('test')
+      const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
+
+      const product = await testService.getProduct()
+      const category = await testService.getCategory()
+      const response = await request(app.getHttpServer())
+        .patch('/api/products/'+(product.id))
+        .set('authorization', token)
+        .send({
+          name: 'test',
+          description: 'test',
+          price: '12.122',
+          stock: 2,
+          categoryId: category.id,
+        })
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toBeDefined();
+      expect(response.body.data.id).toBe(product.id);
+      expect(response.body.data.name).toBe('test');
+      expect(response.body.data.description).toBe('test');
+      expect(response.body.data.price).toBe('12.12');
+      expect(response.body.data.stock).toBe(2);
+      expect(response.body.data.categoryId).toBe(category.id);
+    })
+  })
+
+  describe('DELETE /api/products/:id', () => {
+    beforeEach(async () => {
+      await testService.deleteCategory()
+      await testService.deleteProduct()
+      await testService.deleteUser()
+
+      await testService.createProduct()
+    })
+
+    it('should be rejected if user is not admin', async () => {
+      await testService.createUser('test', 'test@mail.com')
+      const user = await testService.getUser('test')
+      const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
+
+      const product = await testService.getProduct()
+      const response = await request(app.getHttpServer())
+        .delete('/api/products/'+(product.id))
+        .set('authorization', token)
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(403);
+      expect(response.body.errors).toBeDefined();
+    })
+
+    it('should be rejected if product is not found', async () => {
+      await testService.createUser('test', 'test@mail.com', 'admin')
+      const user = await testService.getUser('test')
+      const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
+
+      const product = await testService.getProduct()
+      const response = await request(app.getHttpServer())
+        .patch(`/api/products/${product.id}asc`)
+        .set('authorization', token)
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(404);
+      expect(response.body.errors).toBeDefined();
+    })
+
+    it('should be able update product', async () => {
+      await testService.createUser('test', 'test@mail.com', 'admin')
+      const user = await testService.getUser('test')
+      const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
+
+      const product = await testService.getProduct()
+      const response = await request(app.getHttpServer())
+        .delete('/api/products/'+(product.id))
+        .set('authorization', token)
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toBeDefined();
+      expect(response.body.data).toBe('Ok');
+    })
+  })
 });
