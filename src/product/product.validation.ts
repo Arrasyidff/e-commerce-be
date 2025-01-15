@@ -10,4 +10,24 @@ export class ProductValidation {
     stock: z.number().min(0),
     categoryId: z.string()
   });
+  
+  static readonly FILTER: ZodType = z.object({
+    name: z.string().min(1).optional(),
+    price: z.string().min(1).optional(),
+    // stock: z.number().min(0),
+    // categoryId: z.string(),
+    page: z.number().positive(),
+    size: z.number().positive(),
+    sortKey: z.string().optional(),
+    sortOrder: z.number().positive().optional()
+  });
+
+  static readonly UPDATE: ZodType = z.object({
+    id: z.string().min(1),
+    name: z.string().min(1).max(100).optional(),
+    description: z.string().min(1).max(100).optional(),
+    price: z.string().min(1).optional(),
+    stock: z.number().min(0).optional(),
+    categoryId: z.string().optional()
+  });
 }
