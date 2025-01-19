@@ -7,4 +7,5 @@ export class OrderResponse {
   userId: string;
   totalAmount: string;
   status: string;
+  paymentMethod: string;
 }

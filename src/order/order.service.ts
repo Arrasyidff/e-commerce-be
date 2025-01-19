@@ -64,6 +64,7 @@ export class OrderService {
             userId: user.id,
             totalAmount: new Decimal(totalAmount),
             status: 'Pending',
+            paymentMethod: createOrderRequest.payment_method
           }
         })
 
@@ -76,14 +77,6 @@ export class OrderService {
 
         await tx.orderItem.createMany({
           data: orderItemsData
-        })
-
-        await tx.payment.create({
-          data: {
-            orderId: order.id,
-            status: 'Pending',
-            paymentMethod: createOrderRequest.payment_method
-          }
         })
 
         await tx.cartItem.deleteMany({
@@ -101,6 +94,7 @@ export class OrderService {
         userId: order.id,
         totalAmount: order.totalAmount.toString(),
         status: order.status,
+        paymentMethod: order.paymentMethod,
 
       }
     } catch (error) {
