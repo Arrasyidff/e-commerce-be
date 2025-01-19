@@ -17,6 +17,17 @@ export class OrderService {
     private prismaService: PrismaService
   ) {}
 
+  toOrderResponse(order: Order): OrderResponse
+  {
+    return {
+      id: order.id,
+      userId: order.id,
+      totalAmount: order.totalAmount.toString(),
+      status: order.status,
+      paymentMethod: order.paymentMethod,
+    }
+  }
+
   async createOrder(user: User, request: CreateOrderRequest): Promise<OrderResponse>
   {
     try {
@@ -89,14 +100,7 @@ export class OrderService {
       }
 
       order = order as Order
-      return {
-        id: order.id,
-        userId: order.id,
-        totalAmount: order.totalAmount.toString(),
-        status: order.status,
-        paymentMethod: order.paymentMethod,
-
-      }
+      return this.toOrderResponse(order)
     } catch (error) {
       if (error instanceof ZodError) {
         throw error
@@ -108,5 +112,16 @@ export class OrderService {
     }
   }
 
-  // async getAllOrders(): Promise<>
+  async getOrder(id: string): Promise<OrderResponse>
+  {
+    const order = await this.prismaService.order.findUnique({
+      where: {id: id}
+    })
+
+    if (!order) {
+      throw new HttpException('Order is not found', 404)
+    }
+
+    return this.toOrderResponse(order)
+  }
 }

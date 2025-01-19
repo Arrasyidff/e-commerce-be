@@ -20,4 +20,16 @@ export class OrderController {
       data: response
     }
   }
+
+  @Get(':id')
+  @HttpCode(200)
+  async get(
+    @Param('id') id: string
+  ): Promise<WebResponse<OrderResponse>>
+  {
+    const response = await this.orderService.getOrder(id)
+    return {
+      data: response
+    }
+  }
 }

@@ -151,4 +151,40 @@ describe('Order Controller', () => {
       expect(response.body.data).toBeDefined();
     })
   })
+
+  describe('GET /api/orders/:id', () => {
+    beforeEach(async () => {
+      await testService.deleteAll()
+
+      await testService.createOrder()
+    })
+
+    it('should be reject if order is not found', async () => {
+      const order = await testService.getOrder()
+      const response = await request(app.getHttpServer())
+        .get(`/api/orders/${order.id}asc`)
+        .send({
+          payment_method: 'transfer'
+        })
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(404);
+      expect(response.body.errors).toBeDefined();
+    })
+
+    it('should be able get order', async () => {
+      const order = await testService.getOrder()
+      const response = await request(app.getHttpServer())
+        .get(`/api/orders/${order.id}`)
+        .send({
+          payment_method: 'transfer'
+        })
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toBeDefined();
+    })
+  })
 });
