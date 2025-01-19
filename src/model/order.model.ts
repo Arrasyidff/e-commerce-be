@@ -13,3 +13,8 @@ export class OrderResponse {
 export class FilterOrderRequest {
   status?: string;
 }
+
+export class UpdateOrderRequest {
+  id: string;
+  status: string;
+}

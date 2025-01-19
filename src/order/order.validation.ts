@@ -10,4 +10,9 @@ export class OrderValidation {
   static readonly FILTER: ZodType = z.object({
     status: z.string().min(1).optional(),
   });
+
+  static readonly UPDATE: ZodType = z.object({
+    id: z.string().min(1),
+    status: z.string().min(1),
+  });
 }

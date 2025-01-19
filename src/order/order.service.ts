@@ -5,7 +5,7 @@ import { HttpException, Inject, Injectable } from "@nestjs/common";
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { OrderValidation } from "./order.validation";
 import { CartItem, Order, Product, User } from "@prisma/client";
-import { CreateOrderRequest, FilterOrderRequest, OrderResponse } from "../model/order.model";
+import { CreateOrderRequest, FilterOrderRequest, OrderResponse, UpdateOrderRequest } from "../model/order.model";
 import { Decimal } from "@prisma/client/runtime/library";
 import { ZodError } from "zod";
 
@@ -149,5 +149,33 @@ export class OrderService {
     })
 
     return orders.map((order: Order) => this.toOrderResponse(order))
+  }
+
+  async updateOrder(user: User, request: UpdateOrderRequest): Promise<OrderResponse>
+  {
+    if (user.role !== 'admin') {
+      throw new HttpException('Access denied', 403)
+    }
+
+    const updateOrderRequest: UpdateOrderRequest = this.validationService.validate(
+      OrderValidation.UPDATE,
+      request
+    )
+
+    let order = await this.prismaService.order.findUnique({
+      where: {id: updateOrderRequest.id}
+    })
+
+    if (!order) {
+      throw new HttpException('Order is not found', 404)
+    }
+
+    order.status = updateOrderRequest.status
+    order = await this.prismaService.order.update({
+      where: {id: order.id},
+      data: {...order}
+    })
+
+    return this.toOrderResponse(order)
   }
 }

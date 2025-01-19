@@ -152,36 +152,6 @@ describe('Order Controller', () => {
     })
   })
 
-  describe('GET /api/orders/:id', () => {
-    beforeEach(async () => {
-      await testService.deleteAll()
-
-      await testService.createOrder()
-    })
-
-    it('should be reject if order is not found', async () => {
-      const order = await testService.getOrder()
-      const response = await request(app.getHttpServer())
-        .get(`/api/orders/${order.id}asc`)
-
-      logger.info(response.body);
-
-      expect(response.status).toBe(404);
-      expect(response.body.errors).toBeDefined();
-    })
-
-    it('should be able get order', async () => {
-      const order = await testService.getOrder()
-      const response = await request(app.getHttpServer())
-        .get(`/api/orders/${order.id}`)
-
-      logger.info(response.body);
-
-      expect(response.status).toBe(200);
-      expect(response.body.data).toBeDefined();
-    })
-  })
-
   describe('GET /api/orders', () => {
     beforeEach(async () => {
       await testService.deleteAll()
@@ -230,6 +200,130 @@ describe('Order Controller', () => {
       expect(response.status).toBe(200);
       expect(response.body.data).toBeDefined();
       expect(response.body.data.length).toBe(1);
+    })
+  })
+
+  describe('GET /api/orders/:id', () => {
+    beforeEach(async () => {
+      await testService.deleteAll()
+
+      await testService.createOrder()
+    })
+
+    it('should be reject if order is not found', async () => {
+      const order = await testService.getOrder()
+      const response = await request(app.getHttpServer())
+        .get(`/api/orders/${order.id}asc`)
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(404);
+      expect(response.body.errors).toBeDefined();
+    })
+
+    it('should be able get order', async () => {
+      const order = await testService.getOrder()
+      const response = await request(app.getHttpServer())
+        .get(`/api/orders/${order.id}`)
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toBeDefined();
+    })
+  })
+
+  describe('PATCH /api/orders/:id', () => {
+    beforeEach(async () => {
+      await testService.deleteAll()
+
+      await testService.createOrder()
+    })
+
+    it('should be reject if token is empty', async () => {
+      const order = await testService.getOrder()
+      const response = await request(app.getHttpServer())
+        .patch(`/api/orders/${order.id}`)
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(401);
+      expect(response.body.errors).toBeDefined();
+    })
+
+    it('should be reject if user is not admin', async () => {
+      const user = await testService.getUser()
+      const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
+
+      const order = await testService.getOrder()
+      const response = await request(app.getHttpServer())
+        .patch(`/api/orders/${order.id}`)
+        .send({
+          status: 'Confirmed'
+        })
+        .set('authorization', token)
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(403);
+      expect(response.body.errors).toBeDefined();
+    })
+
+    it('should be reject if request is invalid', async () => {
+      await testService.createUser('testAdmin', 'testAdmin@mail.com', 'admin')
+      const user = await testService.getUser('testAdmin')
+      const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
+
+      const order = await testService.getOrder()
+      const response = await request(app.getHttpServer())
+        .patch(`/api/orders/${order.id}`)
+        .send({
+          status: ''
+        })
+        .set('authorization', token)
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(400);
+      expect(response.body.errors).toBeDefined();
+    })
+
+    it('should be reject if order is not found', async () => {
+      await testService.createUser('testAdmin', 'testAdmin@mail.com', 'admin')
+      const user = await testService.getUser('testAdmin')
+      const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
+
+      const order = await testService.getOrder()
+      const response = await request(app.getHttpServer())
+        .patch(`/api/orders/${order.id}asc`)
+        .send({
+          status: 'Confirmed'
+        })
+        .set('authorization', token)
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(404);
+      expect(response.body.errors).toBeDefined();
+    })
+
+    it('should be reject if order is not found', async () => {
+      await testService.createUser('testAdmin', 'testAdmin@mail.com', 'admin')
+      const user = await testService.getUser('testAdmin')
+      const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
+
+      const order = await testService.getOrder()
+      const response = await request(app.getHttpServer())
+        .patch(`/api/orders/${order.id}`)
+        .send({
+          status: 'Confirmed'
+        })
+        .set('authorization', token)
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toBeDefined();
     })
   })
 });
