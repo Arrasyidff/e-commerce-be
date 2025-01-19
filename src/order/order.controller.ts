@@ -1,9 +1,9 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query } from "@nestjs/common";
 import { WebResponse } from "../model/web.model";
 import { Auth } from "../common/auth.decorator";
 import { User } from "@prisma/client";
 import { OrderService } from "./order.service";
-import { CreateOrderRequest, OrderResponse } from "../model/order.model";
+import { CreateOrderRequest, FilterOrderRequest, OrderResponse } from "../model/order.model";
 
 @Controller('api/orders/')
 export class OrderController {
@@ -28,6 +28,21 @@ export class OrderController {
   ): Promise<WebResponse<OrderResponse>>
   {
     const response = await this.orderService.getOrder(id)
+    return {
+      data: response
+    }
+  }
+
+  @Get()
+  @HttpCode(200)
+  async getAll(
+    @Auth() user: User,
+    @Query('status') status?: string,
+  ): Promise<WebResponse<OrderResponse[]>> {
+    const request: FilterOrderRequest = {
+      status,
+    };
+    const response = await this.orderService.getAllOrder(user, request);
     return {
       data: response
     }

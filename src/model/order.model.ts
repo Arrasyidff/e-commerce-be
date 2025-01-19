@@ -9,3 +9,7 @@ export class OrderResponse {
   status: string;
   paymentMethod: string;
 }
+
+export class FilterOrderRequest {
+  status?: string;
+}

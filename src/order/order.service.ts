@@ -5,7 +5,7 @@ import { HttpException, Inject, Injectable } from "@nestjs/common";
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { OrderValidation } from "./order.validation";
 import { CartItem, Order, Product, User } from "@prisma/client";
-import { CreateOrderRequest, OrderResponse } from "../model/order.model";
+import { CreateOrderRequest, FilterOrderRequest, OrderResponse } from "../model/order.model";
 import { Decimal } from "@prisma/client/runtime/library";
 import { ZodError } from "zod";
 
@@ -123,5 +123,31 @@ export class OrderService {
     }
 
     return this.toOrderResponse(order)
+  }
+
+  async getAllOrder(user: User, request: FilterOrderRequest): Promise<OrderResponse[]>
+  {
+    const filterOrderRequest: FilterOrderRequest = this.validationService.validate(
+      OrderValidation.FILTER,
+      request,
+    );
+
+    const filters = [];
+    filters.push({userId: user.id})
+    if (filterOrderRequest.status) {
+      filters.push({
+        status: {
+          contains: filterOrderRequest.status,
+        }
+      });
+    }
+
+    const orders = await this.prismaService.order.findMany({
+      where: {
+        AND: filters
+      }
+    })
+
+    return orders.map((order: Order) => this.toOrderResponse(order))
   }
 }

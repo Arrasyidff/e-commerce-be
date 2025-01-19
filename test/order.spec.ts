@@ -163,9 +163,6 @@ describe('Order Controller', () => {
       const order = await testService.getOrder()
       const response = await request(app.getHttpServer())
         .get(`/api/orders/${order.id}asc`)
-        .send({
-          payment_method: 'transfer'
-        })
 
       logger.info(response.body);
 
@@ -177,14 +174,62 @@ describe('Order Controller', () => {
       const order = await testService.getOrder()
       const response = await request(app.getHttpServer())
         .get(`/api/orders/${order.id}`)
-        .send({
-          payment_method: 'transfer'
-        })
 
       logger.info(response.body);
 
       expect(response.status).toBe(200);
       expect(response.body.data).toBeDefined();
+    })
+  })
+
+  describe('GET /api/orders', () => {
+    beforeEach(async () => {
+      await testService.deleteAll()
+
+      await testService.createOrder()
+    })
+
+    it('should be reject if token is empty', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/api/orders`)
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(401);
+      expect(response.body.errors).toBeDefined();
+    })
+
+    it('should be able get orders', async () => {
+      const user = await testService.getUser('test')
+      const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
+
+      const response = await request(app.getHttpServer())
+        .get(`/api/orders`)
+        .set('authorization', token)
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toBeDefined();
+      expect(response.body.data.length).toBe(1);
+    })
+
+    it('should be able get orders fitler by status pending', async () => {
+      const user = await testService.getUser('test')
+      const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
+
+      const response = await request(app.getHttpServer())
+        .get(`/api/orders`)
+        .query({
+          status: 'Pending'
+        })
+        .set('authorization', token)
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toBeDefined();
+      expect(response.body.data.length).toBe(1);
     })
   })
 });
