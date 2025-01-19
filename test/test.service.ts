@@ -17,6 +17,7 @@ export class TestService {
   };
 
   async deleteAll() {
+    await this.deleteOrder()
     await this.deleteCart()
     await this.deleteProduct()
     await this.deleteCategory()
@@ -139,9 +140,20 @@ export class TestService {
     })
   }
 
+  async deleteCartItem() {
+    await this.prismaService.cartItem.deleteMany()
+  }
+
   async deleteCart() {
     await this.prismaService.cartItem.deleteMany()
     await this.prismaService.cart.deleteMany()
   }
   /** end cart */
+
+  /** order */
+  async deleteOrder() {
+    await this.prismaService.orderItem.deleteMany()
+    await this.prismaService.order.deleteMany()
+  }
+  /** end order */
 }

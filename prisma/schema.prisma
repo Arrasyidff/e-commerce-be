@@ -21,7 +21,8 @@ model User {
   role String @db.VarChar(20) @default("customer")
   created_at DateTime @default(now())
 
-  cart Cart[]
+  carts Cart[]
+  orders Order[]
 
   @@map("users")
 }
@@ -31,7 +32,7 @@ model Category {
   name String @db.VarChar(100) @unique
   created_at DateTime @default(now())
   
-  product Product[]
+  products Product[]
 
   @@map("categories")
 }
@@ -46,7 +47,8 @@ model Product {
   created_at DateTime @default(now())
 
   category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull, onUpdate: SetNull)
-  cartItem CartItem[]
+  cartItems CartItem[]
+  orderItems OrderItem[]
 
   @@map("products")
 }
@@ -57,7 +59,7 @@ model Cart {
   created_at DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  items CartItem[]
+  cartItems CartItem[]
 
   @@map("carts")
 }
@@ -75,4 +77,44 @@ model CartItem {
   @@unique([cartId, productId])
 
   @@map("cart_items")
+}
+
+model Order {
+  id String @id() @default(uuid())
+  userId String
+  totalAmount Decimal @db.Decimal(10, 2)
+  status String @default("Pending") @db.VarChar(20)
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  orderItems OrderItem[]
+  payments Payment[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id String @id() @default(uuid())
+  orderId String
+  productId String
+  quantity Int
+  price Decimal @db.Decimal(10, 2)
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@map("order_items")
+}
+
+model Payment {
+  id String @id() @default(uuid())
+  orderId String
+  paymentMethod String? @db.VarChar(50)
+  status String @default("Pending") @db.VarChar(20)
+  paid_at DateTime?
+  created_at DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@map("payments")
 }
