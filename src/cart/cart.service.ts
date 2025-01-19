@@ -5,7 +5,7 @@ import { HttpException, Inject, Injectable } from "@nestjs/common";
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { CartValidation } from "./cart.validation";
 import { Cart, User } from "@prisma/client";
-import { AddItemCartRequest, CartResponse } from "src/model/cart.model";
+import { AddItemCartRequest, CartResponse, UpdateItemCartRequest } from "src/model/cart.model";
 
 @Injectable()
 export class CartService {
@@ -71,4 +71,45 @@ export class CartService {
     return carts.map((cart: Cart) => this.toCartResponse(cart))
   }
   
+  async updateItem(request: UpdateItemCartRequest): Promise<CartResponse>
+  {
+    const updateItemCartRequest: UpdateItemCartRequest = this.validationService.validate(
+      CartValidation.UPDATE_ITEM,
+      request
+    )
+
+    let cart = await this.prismaService.cart.findUnique({
+      where: {userId: updateItemCartRequest.userId}
+    })
+
+    if (!cart) {
+      throw new HttpException('Cart is not found', 404)
+    }
+
+    const cartItem = await this.prismaService.cartItem.findUnique({
+      where: {
+        cartId_productId: {
+          cartId: cart.id,
+          productId: updateItemCartRequest.productId
+        }
+      }
+    })
+
+    if (!cartItem) {
+      throw new HttpException('Cart is not found', 404)
+    }
+
+    cartItem.quantity = updateItemCartRequest.quantity
+    await this.prismaService.cartItem.update({
+      where: {
+        cartId_productId: {
+          cartId: cart.id,
+          productId: updateItemCartRequest.productId
+        }
+      },
+      data: cartItem
+    })
+
+    return this.toCartResponse(cart)
+  }
 }

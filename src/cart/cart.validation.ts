@@ -8,4 +8,10 @@ export class CartValidation {
     productId: z.string().min(1),
     quantity: z.number().positive().min(1),
   });
+
+  static readonly UPDATE_ITEM: ZodType = z.object({
+    userId: z.string().min(1),
+    productId: z.string().min(1),
+    quantity: z.number().positive().min(1),
+  });
 }
