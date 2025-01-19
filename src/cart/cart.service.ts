@@ -112,4 +112,29 @@ export class CartService {
 
     return this.toCartResponse(cart)
   }
+
+  async deleteItem(user: User, id: string): Promise<CartResponse>
+  {
+    let cart = await this.prismaService.cart.findUnique({
+      where: {userId: user.id}
+    })
+
+    if (!cart) {
+      throw new HttpException('Cart is not found', 404)
+    }
+
+    const cartItem = await this.prismaService.cartItem.findUnique({
+      where: {id: id}
+    })
+
+    if (!cartItem) {
+      throw new HttpException('Cart is not found', 404)
+    }
+
+    await this.prismaService.cartItem.delete({
+      where: {id: id}
+    })
+
+    return this.toCartResponse(cart)
+  }
 }

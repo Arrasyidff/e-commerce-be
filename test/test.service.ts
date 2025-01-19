@@ -110,8 +110,6 @@ export class TestService {
   }
 
   async getCart(): Promise<Cart> {
-    await this.createCart()
-
     const user = await this.getUser()
     return await this.prismaService.cart.findUnique({
       where: {userId: user.id}
@@ -128,6 +126,16 @@ export class TestService {
         productId: product.id,
         quantity: 2
       }
+    })
+  }
+
+  async getCartItem() {
+    await this.createCart()
+    await this.addItem()
+
+    const cart = await this.getCart()
+    return await this.prismaService.cartItem.findFirst({
+      where: {cartId: cart.id}
     })
   }
 

@@ -94,6 +94,7 @@ describe('Cart Controller', () => {
     beforeEach(async () => {
       await testService.deleteAll()
 
+      await testService.createCart()
       await testService.addItem()
     })
 
@@ -127,6 +128,7 @@ describe('Cart Controller', () => {
     beforeEach(async () => {
       await testService.deleteAll()
 
+      await testService.createCart()
       await testService.addItem()
     })
 
@@ -223,6 +225,71 @@ describe('Cart Controller', () => {
       expect(response.body.data.id).toBeDefined();
       expect(response.body.data.userId).toBeDefined();
       expect(response.body.data.userId).toBe(user.id);
+    })
+  })
+
+  describe('DELETE /api/carts/:id', () => {
+    beforeEach(async () => {
+      await testService.deleteAll()
+    })
+
+    it('should be reject if token is empty', async () => {
+      const cartItem = await testService.getCartItem()
+
+      const response = await request(app.getHttpServer())
+        .delete(`/api/carts/items/${cartItem.id}`)
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(401);
+      expect(response.body.errors).toBeDefined();
+    })
+
+    it('should be reject if cart is not found', async () => {
+      const cartItem = await testService.getCartItem()
+      const user = await testService.getUser('test')
+      const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
+
+      await testService.deleteCart()
+
+      const response = await request(app.getHttpServer())
+        .delete(`/api/carts/items/${cartItem.id}`)
+        .set('authorization', token)
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(404);
+      expect(response.body.errors).toBeDefined();
+    })
+
+    it('should be reject if cart item is not found', async () => {
+      const cartItem = await testService.getCartItem()
+      const user = await testService.getUser('test')
+      const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
+
+      const response = await request(app.getHttpServer())
+        .delete(`/api/carts/items/${cartItem.id}asc`)
+        .set('authorization', token)
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(404);
+      expect(response.body.errors).toBeDefined();
+    })
+
+    it('should be be able delete cart', async () => {
+      const cartItem = await testService.getCartItem()
+      const user = await testService.getUser('test')
+      const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
+
+      const response = await request(app.getHttpServer())
+        .delete(`/api/carts/items/${cartItem.id}`)
+        .set('authorization', token)
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toBeDefined();
     })
   })
 });

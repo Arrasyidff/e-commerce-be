@@ -45,4 +45,16 @@ export class CartController {
       data: response
     }
   }
+
+  @Delete('items/:id')
+  @HttpCode(200)
+  async delete(
+    @Auth() user: User,
+    @Param('id') id: string,
+  ): Promise<WebResponse<string>> {
+    await this.cartService.deleteItem(user, id)
+    return {
+      data: "Ok"
+    }
+  }
 }
