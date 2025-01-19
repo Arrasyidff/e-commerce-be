@@ -21,6 +21,8 @@ model User {
   role String @db.VarChar(20) @default("customer")
   created_at DateTime @default(now())
 
+  cart Cart[]
+
   @@map("users")
 }
 
@@ -44,6 +46,33 @@ model Product {
   created_at DateTime @default(now())
 
   category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull, onUpdate: SetNull)
+  cartItem CartItem[]
 
   @@map("products")
+}
+
+model Cart {
+  id String @id @default(uuid())
+  userId String @unique
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  items CartItem[]
+
+  @@map("carts")
+}
+
+model CartItem {
+  id String @id @default(uuid())
+  cartId String
+  productId String
+  quantity Int @db.Integer
+  created_at DateTime @default(now())
+
+  cart Cart @relation(fields: [cartId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([cartId, productId])
+
+  @@map("cart_items")
 }

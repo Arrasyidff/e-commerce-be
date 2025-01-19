@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../src/common/prisma.service';
 import * as bcrypt from 'bcrypt';
-import { Category, Product, User } from '@prisma/client';
+import { Cart, Category, Product, User } from '@prisma/client';
 import * as jwt from 'jsonwebtoken'
 
 @Injectable()
@@ -11,16 +11,19 @@ export class TestService {
   async generateTestToken(
     payload: Record<string, any>,
     secret: string|null = 'your-secret-key'
-    // expiresIn: string|null = '1h'
   ): Promise<string>
   {
-    return jwt.sign(
-      payload,
-      secret,
-      // { expiresIn }
-    );
+    return jwt.sign(payload, secret);
   };
 
+  async deleteAll() {
+    await this.deleteCart()
+    await this.deleteProduct()
+    await this.deleteCategory()
+    await this.deleteUser()
+  }
+
+  /** user */
   async deleteUser() {
     await this.prismaService.user.deleteMany({ where: { email: {contains: 'test'} } });
   }
@@ -45,7 +48,9 @@ export class TestService {
       where: { username: username || 'test' },
     });
   }
+  /** end user */
 
+  /** category */
   async deleteCategory() {
     await this.prismaService.category.deleteMany({ where: { name: {contains: 'test'} } });
   }
@@ -63,7 +68,9 @@ export class TestService {
       where: { name: 'test' },
     });
   }
+  /** end category */
 
+  /** product */
   async deleteProduct() {
     await this.prismaService.product.deleteMany({ where: { name: {contains: 'test'} } });
   }
@@ -88,4 +95,53 @@ export class TestService {
       where: { name: 'test' },
     });
   }
+  /** end product */
+
+  /** cart */
+  async createCart() {
+    await this.createUser()
+    await this.createProduct()
+
+    const user = await this.getUser()
+
+    await this.prismaService.cart.create({
+      data: {userId: user.id}
+    })
+  }
+
+  async getCart(): Promise<Cart> {
+    const user = await this.getUser()
+    return await this.prismaService.cart.findUnique({
+      where: {userId: user.id}
+    })
+  }
+
+  async addItem() {
+    const cart = await this.getCart()
+    const product = await this.getProduct()
+
+    await this.prismaService.cartItem.create({
+      data: {
+        cartId: cart.id,
+        productId: product.id,
+        quantity: 2
+      }
+    })
+  }
+
+  async getCartItem() {
+    await this.createCart()
+    await this.addItem()
+
+    const cart = await this.getCart()
+    return await this.prismaService.cartItem.findFirst({
+      where: {cartId: cart.id}
+    })
+  }
+
+  async deleteCart() {
+    await this.prismaService.cartItem.deleteMany()
+    await this.prismaService.cart.deleteMany()
+  }
+  /** end cart */
 }
