@@ -3,10 +3,14 @@ import { PrismaService } from '../src/common/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { Cart, Category, Product, User } from '@prisma/client';
 import * as jwt from 'jsonwebtoken'
+import { OrderService } from '../src/order/order.service'
 
 @Injectable()
 export class TestService {
-  constructor(private prismaService: PrismaService) {}
+  constructor(
+    private prismaService: PrismaService,
+    private orderService: OrderService
+  ) {}
 
   async generateTestToken(
     payload: Record<string, any>,
@@ -17,6 +21,7 @@ export class TestService {
   };
 
   async deleteAll() {
+    await this.deleteOrder()
     await this.deleteCart()
     await this.deleteProduct()
     await this.deleteCategory()
@@ -138,10 +143,47 @@ export class TestService {
       where: {cartId: cart.id}
     })
   }
+  
+  async getCartItems() {
+    await this.createCart()
+    await this.addItem()
+
+    const cart = await this.getCart()
+    return await this.prismaService.cartItem.findMany({
+      where: {cartId: cart.id}
+    })
+  }
+
+  async deleteCartItem() {
+    await this.prismaService.cartItem.deleteMany()
+  }
 
   async deleteCart() {
     await this.prismaService.cartItem.deleteMany()
     await this.prismaService.cart.deleteMany()
   }
   /** end cart */
+
+  /** order */
+  async deleteOrder() {
+    await this.prismaService.orderItem.deleteMany()
+    await this.prismaService.order.deleteMany()
+  }
+
+  async createOrder() {
+    await this.createCart()
+    await this.addItem()
+    const user = await this.getUser()
+
+    await this.orderService.createOrder(user, {payment_method: 'transfer'})
+  }
+
+  async getOrder() {
+    const user = await this.getUser()
+    
+    return await this.prismaService.order.findFirst({
+      where: {userId: user.id}
+    })
+  }
+  /** end order */
 }

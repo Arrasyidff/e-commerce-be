@@ -5,7 +5,7 @@ import { HttpException, Inject, Injectable } from "@nestjs/common";
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { CartValidation } from "./cart.validation";
 import { Cart, User } from "@prisma/client";
-import { AddItemCartRequest, CartResponse, UpdateItemCartRequest } from "src/model/cart.model";
+import { AddItemCartRequest, CartResponse, UpdateItemCartRequest } from "../model/cart.model";
 
 @Injectable()
 export class CartService {

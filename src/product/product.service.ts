@@ -7,8 +7,7 @@ import { ProductResponse, CreateProductRequest, FilterProductRequest, UpdateProd
 import { ProductValidation } from "./product.validation";
 import { Decimal } from "@prisma/client/runtime/library";
 import { Product, User } from "@prisma/client";
-import { WebResponse } from "src/model/web.model";
-import { UpdateCategoryRequest } from "src/model/category.model";
+import { WebResponse } from "../model/web.model";
 
 @Injectable()
 export class ProductService {
