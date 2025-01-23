@@ -84,7 +84,6 @@ describe('User Controller', () => {
 
     it('should be rejected if email already exists', async () => {
       await testService.createUser();
-
       const response = await request(app.getHttpServer())
         .post('/api/users')
         .send({
@@ -103,7 +102,7 @@ describe('User Controller', () => {
 
   describe('POST /api/users/login', () => {
     beforeEach(async () => {
-      await testService.deleteUser()
+      await testService.deleteAll()
     })
 
     it('should be rejected if request is invalid', async () => {
@@ -174,7 +173,7 @@ describe('User Controller', () => {
 
   describe('GET /api/users', () => {
     beforeEach(async () => {
-      await testService.deleteUser()
+      await testService.deleteAll()
 
       await testService.createUser(null, null, 'admin');
     })
@@ -228,11 +227,11 @@ describe('User Controller', () => {
     })
   })
 
-  describe('GET /api/users', () => {
+  describe('GET /api/users/:id', () => {
     beforeEach(async () => {
-      await testService.deleteUser()
+      await testService.deleteAll()
 
-      await testService.createUser(null, null, 'admin');
+      await testService.createUser(null, null);
     })
 
     it('should be rejected if user is not found', async () => {
@@ -264,15 +263,14 @@ describe('User Controller', () => {
 
   describe('PATCH /api/users', () => {
     beforeEach(async () => {
-      await testService.deleteUser()
+      await testService.deleteAll()
 
       await testService.createUser(null, null, 'admin');
     })
 
-    it('should be rejected if user is not found', async () => {
-      const user = await testService.getUser()
+    it('should be rejected if token is empty', async () => {
       const response = await request(app.getHttpServer())
-        .patch(`/api/users/${user.id}asc`)
+        .patch('/api/users')
         .send({
           username: 'test',
           email: 'test@mail.com',
@@ -282,20 +280,22 @@ describe('User Controller', () => {
 
       logger.info(response.body);
 
-      expect(response.status).toBe(404);
+      expect(response.status).toBe(401);
       expect(response.body.errors).toBeDefined();
     })
 
     it('should be rejected if request is invalid', async () => {
       const user = await testService.getUser()
+      const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
       const response = await request(app.getHttpServer())
-        .patch(`/api/users/${user.id}`)
+        .patch('/api/users')
         .send({
           username: '',
           email: '',
           password: '',
           role: ''
         })
+        .set('authorization', token)
 
       logger.info(response.body);
 
@@ -305,14 +305,16 @@ describe('User Controller', () => {
 
     it('should be able to update user', async () => {
       const user = await testService.getUser()
+      const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
       const response = await request(app.getHttpServer())
-        .patch(`/api/users/${user.id}`)
+        .patch('/api/users')
         .send({
           username: 'test',
           email: 'test@mail.com',
           password: 'test',
           role: 'test',
-        });
+        })
+        .set('authorization', token)
 
       logger.info(response.body);
 
@@ -326,14 +328,16 @@ describe('User Controller', () => {
     it('should be rejected if email already exists', async () => {
       await testService.createUser(null, 'test123@mail.com');
       const user = await testService.getUser()
+      const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
       const response = await request(app.getHttpServer())
-        .patch(`/api/users/${user.id}`)
+        .patch('/api/users')
         .send({
           username: 'test',
           email: 'test123@mail.com',
           password: 'test',
           role: 'test'
-        });
+        })
+        .set('authorization', token)
 
       logger.info(response.body);
 
@@ -344,7 +348,7 @@ describe('User Controller', () => {
 
   describe('DELETE /api/users', () => {
     beforeEach(async () => {
-      await testService.deleteUser()
+      await testService.deleteAll()
 
       await testService.createUser(null, null, 'admin');
     })
@@ -352,12 +356,7 @@ describe('User Controller', () => {
     it('should be rejected if user is not admin', async () => {
       await testService.createUser('test123', 'test123@mail.com')
       const userLogin = await testService.getUser('test123')
-      const token = await testService.generateTestToken({
-        id: userLogin.id,
-        email: userLogin.email},
-        'secret'
-      )
-
+      const token = await testService.generateTestToken({id: userLogin.id, email: userLogin.email}, 'secret')
       const user = await testService.getUser()
       const response = await request(app.getHttpServer())
         .delete(`/api/users/${user.id}`)
@@ -372,12 +371,7 @@ describe('User Controller', () => {
     it('should be rejected if user is not found', async () => {
       await testService.createUser('test123', 'test123@mail.com', 'admin')
       const userLogin = await testService.getUser('test123')
-      const token = await testService.generateTestToken({
-        id: userLogin.id,
-        email: userLogin.email},
-        'secret'
-      )
-
+      const token = await testService.generateTestToken({id: userLogin.id, email: userLogin.email}, 'secret')
       const user = await testService.getUser()
       const response = await request(app.getHttpServer())
         .delete(`/api/users/${user.id}asc`)
@@ -392,12 +386,7 @@ describe('User Controller', () => {
     it('should be able to delete', async () => {
       await testService.createUser('test123', 'test123@mail.com', 'admin')
       const userLogin = await testService.getUser('test123')
-      const token = await testService.generateTestToken({
-        id: userLogin.id,
-        email: userLogin.email},
-        'secret'
-      )
-
+      const token = await testService.generateTestToken({id: userLogin.id, email: userLogin.email}, 'secret')
       const user = await testService.getUser()
       const response = await request(app.getHttpServer())
         .delete(`/api/users/${user.id}`)

@@ -17,16 +17,6 @@ export class UserService {
     private prismaService: PrismaService
   ) {}
 
-  toUserResponse(user: User): UserResponse
-  {
-    return {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      role: user.role
-    }
-  }
-
   async register(request: RegisterUserRequest): Promise<UserResponse>
   {
     this.logger.info(`Register new user ${JSON.stringify(request)}`);
@@ -36,13 +26,8 @@ export class UserService {
       request
     )
 
-    const userExists = await this.prismaService.user.findFirst({
-      where: {email: registerUserRequest.email}
-    });
-
-    if (userExists) {
-      throw new HttpException('Email already registered', 400);
-    }
+    const userExists = await this.getUserByEmail(registerUserRequest.email);
+    if (userExists) throw new HttpException('Email already registered', 400);
 
     registerUserRequest.password = await bcrypt.hash(
       registerUserRequest.password,
@@ -58,18 +43,15 @@ export class UserService {
 
   async login(request: LoginUserRequest): Promise<UserResponse>
   {
+    this.logger.info(`Login user ${JSON.stringify(request)}`);
+
     const loginUserRequest : LoginUserRequest = this.validationService.validate(
       UserValidation.LOGIN,
       request
     )
 
-    const user = await this.prismaService.user.findUnique({
-      where: {email: loginUserRequest.email}
-    })
-
-    if (!user) {
-      throw new HttpException('User is not found', 404)
-    }
+    const user = await this.getUserByEmail(loginUserRequest.email)
+    if (!user) throw new HttpException('User is not found', 404)
 
     const isPasswordValid = await bcrypt.compare(
       loginUserRequest.password,
@@ -91,9 +73,9 @@ export class UserService {
 
   async getAll(user: User): Promise<UserResponse[]>
   {
-    if (user.role !== 'admin') {
-      throw new HttpException('Access denied', 403)
-    }
+    this.logger.info('Get all users');
+
+    await this.adminValidation(user)
 
     const users = await this.prismaService.user.findMany()
     return users.map((user: User) => this.toUserResponse(user))
@@ -101,25 +83,22 @@ export class UserService {
 
   async get(id: string): Promise<UserResponse>
   {
-    const user = await this.prismaService.user.findUnique({where: {id: id}})
-    if (!user) {
-      throw new HttpException('User is not found', 404)
-    }
+    this.logger.info('Get detail user');
+
+    const user = await this.getUserById(id)
+    if (!user) throw new HttpException('User is not found', 404)
 
     return this.toUserResponse(user)
   }
 
-  async update(request: UpdateUserRequest): Promise<UserResponse>
+  async update(user: User, request: UpdateUserRequest): Promise<UserResponse>
   {
+    this.logger.info(`Update user ${JSON.stringify(request)}`);
+
     const updateUserRequest: UpdateUserRequest = this.validationService.validate(
       UserValidation.UPDATE,
       request
     )
-
-    let user = await this.prismaService.user.findUnique({where: {id: updateUserRequest.id}})
-    if (!user) {
-      throw new HttpException('User is not found', 404)
-    }
 
     if (updateUserRequest.email) {
       let userEmailExists = await this.prismaService.user.findFirst({
@@ -128,9 +107,7 @@ export class UserService {
           id: {not: user.id}
         }
       })
-      if (userEmailExists) {
-        throw new HttpException('Email already exists', 400)
-      }
+      if (userEmailExists) throw new HttpException('Email already exists', 400)
       user.email = updateUserRequest.email
     }
 
@@ -159,22 +136,44 @@ export class UserService {
 
   async delete(userLogin: User, id: string): Promise<UserResponse>
   {
-    if (userLogin.role !== 'admin') {
-      throw new HttpException('Access denied', 403)
-    }
+    this.logger.info(`Delete user by id ${id}`);
 
-    const user = await this.prismaService.user.findUnique({
-      where: {id: id}
-    })
+    await this.adminValidation(userLogin)
 
-    if (!user) {
-      throw new HttpException('User is not found', 404)
-    }
+    const user = await this.getUserById(id)
+    if (!user) throw new HttpException('User is not found', 404)
 
-    await this.prismaService.user.delete({
-      where: {id: id}
-    })
+    await this.prismaService.user.delete({where: {id: id}})
 
     return this.toUserResponse(user)
+  }
+
+  adminValidation(user: User): void
+  {
+    if (user.role !== 'admin') {
+      throw new HttpException('Access denied', 403)
+    }
+  }
+
+  async getUserById(id: string): Promise<User>
+  {
+    let user = await this.prismaService.user.findUnique({where: {id: id}})
+    return user
+  }
+
+  async getUserByEmail(email: string): Promise<User>
+  {
+    let user = await this.prismaService.user.findUnique({where: {email: email}})
+    return user
+  }
+
+  toUserResponse(user: User): UserResponse
+  {
+    return {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role
+    }
   }
 }

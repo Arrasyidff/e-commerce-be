@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Put } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post } from "@nestjs/common";
 import { UserService } from "./user.service";
 import { LoginUserRequest, RegisterUserRequest, UpdateUserRequest, UserResponse } from "../model/user.model";
 import { WebResponse } from "../model/web.model";
@@ -53,14 +53,14 @@ export class UserController {
     }
   }
 
-  @Patch(':id')
+  @Patch()
   @HttpCode(200)
   async update(
-    @Param('id') id: string,
+    @Auth() user: User,
     @Body() request: UpdateUserRequest
   ): Promise<WebResponse<UserResponse>> {
-    request.id = id;
-    const response = await this.userService.update(request);
+    request.id = user.id;
+    const response = await this.userService.update(user, request);
     return {
       data: response
     }
