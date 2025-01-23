@@ -12,9 +12,10 @@ export class CategoryController {
   @Post()
   @HttpCode(201)
   async create(
+    @Auth() user: User,
     @Body() request: CreateCategoryRequest
   ): Promise<WebResponse<CategoryResponse>> {
-    const response = await this.categoryService.create(request)
+    const response = await this.categoryService.create(user, request)
     return {
       data: response
     }
