@@ -12,9 +12,10 @@ export class ProductController {
   @Post()
   @HttpCode(201)
   async create(
+    @Auth() user: User,
     @Body() request: CreateProductRequest
   ): Promise<WebResponse<ProductResponse>> {
-    const response = await this.productService.create(request)
+    const response = await this.productService.create(user, request)
     return {
       data: response
     }
