@@ -75,7 +75,7 @@ export class UserService {
   {
     this.logger.info('Get all users');
 
-    await this.adminValidation(user)
+    this.adminValidation(user)
 
     const users = await this.prismaService.user.findMany()
     return users.map((user: User) => this.toUserResponse(user))
@@ -138,7 +138,7 @@ export class UserService {
   {
     this.logger.info(`Delete user by id ${id}`);
 
-    await this.adminValidation(userLogin)
+    this.adminValidation(userLogin)
 
     const user = await this.getUserById(id)
     if (!user) throw new HttpException('User is not found', 404)
@@ -155,13 +155,13 @@ export class UserService {
     }
   }
 
-  async getUserById(id: string): Promise<User>
+  async getUserById(id: string): Promise<User | null>
   {
     let user = await this.prismaService.user.findUnique({where: {id: id}})
     return user
   }
 
-  async getUserByEmail(email: string): Promise<User>
+  async getUserByEmail(email: string): Promise<User | null>
   {
     let user = await this.prismaService.user.findUnique({where: {email: email}})
     return user
