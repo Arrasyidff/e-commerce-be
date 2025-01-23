@@ -26,13 +26,13 @@ describe('Product Controller', () => {
 
   describe('POST /api/products', () => {
     beforeEach(async () => {
-      await testService.deleteCategory()
-      await testService.deleteProduct()
+      await testService.deleteAll()
 
       await testService.createCategory()
+      await testService.createUser(null, null, 'admin')
     })
 
-    it('should be rejected if request is invalid', async () => {
+    it('should be rejected if token is empty', async () => {
       const response = await request(app.getHttpServer())
         .post('/api/products')
         .send({
@@ -45,11 +45,54 @@ describe('Product Controller', () => {
 
       logger.info(response.body);
 
+      expect(response.status).toBe(401);
+      expect(response.body.errors).toBeDefined();
+    })
+
+    it('should be rejected if user is not admin', async () => {
+      await testService.createUser('test123', 'test123@mail.com')
+      const user = await testService.getUser('test123')
+      const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
+      const response = await request(app.getHttpServer())
+        .post('/api/products')
+        .send({
+          name: '',
+          description: '',
+          price: '0',
+          stock: 0,
+          categoryId: '',
+        })
+        .set('authorization', token)
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(403);
+      expect(response.body.errors).toBeDefined();
+    })
+
+    it('should be rejected if request is invalid', async () => {
+      const user = await testService.getUser()
+      const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
+      const response = await request(app.getHttpServer())
+        .post('/api/products')
+        .send({
+          name: '',
+          description: '',
+          price: '0',
+          stock: 0,
+          categoryId: '',
+        })
+        .set('authorization', token)
+
+      logger.info(response.body);
+
       expect(response.status).toBe(400);
       expect(response.body.errors).toBeDefined();
     })
 
     it('should be rejected if category is not found', async () => {
+      const user = await testService.getUser()
+      const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
       const response = await request(app.getHttpServer())
         .post('/api/products')
         .send({
@@ -59,6 +102,7 @@ describe('Product Controller', () => {
           stock: 1,
           categoryId: 'test',
         })
+        .set('authorization', token)
 
       logger.info(response.body);
 
@@ -67,8 +111,9 @@ describe('Product Controller', () => {
     })
 
     it('should be able create product', async () => {
+      const user = await testService.getUser()
+      const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
       const category = await testService.getCategory()
-
       const response = await request(app.getHttpServer())
         .post('/api/products')
         .send({
@@ -78,6 +123,7 @@ describe('Product Controller', () => {
           stock: 1,
           categoryId: category.id,
         })
+        .set('authorization', token)
 
       logger.info(response.body);
 
@@ -94,8 +140,7 @@ describe('Product Controller', () => {
 
   describe('GET /api/products', () => {
     beforeEach(async () => {
-      await testService.deleteCategory()
-      await testService.deleteProduct()
+      await testService.deleteAll()
 
       await testService.createProduct()
     })
@@ -151,8 +196,7 @@ describe('Product Controller', () => {
 
   describe('GET /api/products/:id', () => {
     beforeEach(async () => {
-      await testService.deleteCategory()
-      await testService.deleteProduct()
+      await testService.deleteAll()
 
       await testService.createProduct()
     })
@@ -188,22 +232,15 @@ describe('Product Controller', () => {
 
   describe('PATCH /api/products/:id', () => {
     beforeEach(async () => {
-      await testService.deleteCategory()
-      await testService.deleteProduct()
-      await testService.deleteUser()
+      await testService.deleteAll()
 
       await testService.createProduct()
     })
 
-    it('should be rejected if request is invalid', async () => {
-      await testService.createUser('test', 'test@mail.com')
-      const user = await testService.getUser('test')
-      const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
-
+    it('should be rejected if token is empty', async () => {
       const product = await testService.getProduct()
       const response = await request(app.getHttpServer())
         .patch('/api/products/'+(product.id))
-        .set('authorization', token)
         .send({
           name: '',
           description: '',
@@ -214,7 +251,7 @@ describe('Product Controller', () => {
 
       logger.info(response.body);
 
-      expect(response.status).toBe(403);
+      expect(response.status).toBe(401);
       expect(response.body.errors).toBeDefined();
     })
 
@@ -222,7 +259,6 @@ describe('Product Controller', () => {
       await testService.createUser('test', 'test@mail.com')
       const user = await testService.getUser('test')
       const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
-
       const product = await testService.getProduct()
       const response = await request(app.getHttpServer())
         .patch('/api/products/'+(product.id))
@@ -241,11 +277,32 @@ describe('Product Controller', () => {
       expect(response.body.errors).toBeDefined();
     })
 
+    it('should be rejected if request is invalid', async () => {
+      await testService.createUser('test', 'test@mail.com')
+      const user = await testService.getUser('test')
+      const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
+      const product = await testService.getProduct()
+      const response = await request(app.getHttpServer())
+        .patch('/api/products/'+(product.id))
+        .set('authorization', token)
+        .send({
+          name: '',
+          description: '',
+          price: '',
+          stock: 0,
+          categoryId: '',
+        })
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(403);
+      expect(response.body.errors).toBeDefined();
+    })
+
     it('should be rejected if product is not found', async () => {
       await testService.createUser('test', 'test@mail.com', 'admin')
       const user = await testService.getUser('test')
       const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
-
       const product = await testService.getProduct()
       const category = await testService.getCategory()
       const response = await request(app.getHttpServer())
@@ -269,7 +326,6 @@ describe('Product Controller', () => {
       await testService.createUser('test', 'test@mail.com', 'admin')
       const user = await testService.getUser('test')
       const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
-
       const product = await testService.getProduct()
       const response = await request(app.getHttpServer())
         .patch('/api/products/'+(product.id))
@@ -292,7 +348,6 @@ describe('Product Controller', () => {
       await testService.createUser('test', 'test@mail.com', 'admin')
       const user = await testService.getUser('test')
       const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
-
       const product = await testService.getProduct()
       const category = await testService.getCategory()
       const response = await request(app.getHttpServer())
@@ -321,18 +376,26 @@ describe('Product Controller', () => {
 
   describe('DELETE /api/products/:id', () => {
     beforeEach(async () => {
-      await testService.deleteCategory()
-      await testService.deleteProduct()
-      await testService.deleteUser()
+      await testService.deleteAll()
 
       await testService.createProduct()
+    })
+
+    it('should be rejected if token is empty', async () => {
+      const product = await testService.getProduct()
+      const response = await request(app.getHttpServer())
+        .delete('/api/products/'+(product.id))
+
+      logger.info(response.body);
+
+      expect(response.status).toBe(401);
+      expect(response.body.errors).toBeDefined();
     })
 
     it('should be rejected if user is not admin', async () => {
       await testService.createUser('test', 'test@mail.com')
       const user = await testService.getUser('test')
       const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
-
       const product = await testService.getProduct()
       const response = await request(app.getHttpServer())
         .delete('/api/products/'+(product.id))
@@ -348,7 +411,6 @@ describe('Product Controller', () => {
       await testService.createUser('test', 'test@mail.com', 'admin')
       const user = await testService.getUser('test')
       const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
-
       const product = await testService.getProduct()
       const response = await request(app.getHttpServer())
         .patch(`/api/products/${product.id}asc`)
@@ -364,7 +426,6 @@ describe('Product Controller', () => {
       await testService.createUser('test', 'test@mail.com', 'admin')
       const user = await testService.getUser('test')
       const token = await testService.generateTestToken({id: user.id, email: user.email}, 'secret')
-
       const product = await testService.getProduct()
       const response = await request(app.getHttpServer())
         .delete('/api/products/'+(product.id))

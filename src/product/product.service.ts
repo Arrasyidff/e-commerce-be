@@ -8,43 +8,31 @@ import { ProductValidation } from "./product.validation";
 import { Decimal } from "@prisma/client/runtime/library";
 import { Product, User } from "@prisma/client";
 import { WebResponse } from "../model/web.model";
+import { CategoryService } from "../category/category.service";
+import { UserService } from "../user/user.service";
 
 @Injectable()
 export class ProductService {
   constructor(
     private validationService: ValidationService,
     @Inject(WINSTON_MODULE_PROVIDER) private logger: Logger,
-    private prismaService: PrismaService
+    private prismaService: PrismaService,
+    private categoryService: CategoryService,
+    private userService: UserService
   ) {}
 
-  toProductResponse(product: Product): ProductResponse
-  {
-    return {
-      id: product.id,
-      name: product.name,
-      description: product.description,
-      price: product.price.toString(),
-      stock: product.stock,
-      categoryId: product.categoryId
-    }
-  }
-
-  async create(request: CreateProductRequest): Promise<ProductResponse>
+  async create(user: User, request: CreateProductRequest): Promise<ProductResponse>
   {
     this.logger.info(`Create new product ${JSON.stringify(request)}`);
+    
+    this.userService.adminValidation(user)
 
     const createProductRequest : CreateProductRequest = this.validationService.validate(
       ProductValidation.CREATE,
       request
     )
 
-    const category = await this.prismaService.category.findUnique({
-      where: {id: createProductRequest.categoryId}
-    })
-
-    if (!category) {
-      throw new HttpException('Category is not found', 404)
-    }
+    await this.categoryService.get(createProductRequest.categoryId)
 
     const product = await this.prismaService.product.create({
       data: {
@@ -58,6 +46,8 @@ export class ProductService {
 
   async getAll(request: FilterProductRequest): Promise<WebResponse<ProductResponse[]>>
   {
+    this.logger.info('Get all products');
+
     const filterProductRequest: FilterProductRequest = this.validationService.validate(
       ProductValidation.FILTER,
       request,
@@ -135,9 +125,7 @@ export class ProductService {
   {
     this.logger.info(`Update product ${JSON.stringify(request)}`);
 
-    if (user.role !== 'admin') {
-      throw new HttpException('Access denied', 403)
-    }
+    this.userService.adminValidation(user)
 
     const updateProductRequest : UpdateProductRequest = this.validationService.validate(
       ProductValidation.UPDATE,
@@ -191,9 +179,7 @@ export class ProductService {
   {
     this.logger.info(`Delete product id ${id}`);
 
-    if (user.role !== 'admin') {
-      throw new HttpException('Access denied', 403)
-    }
+    this.userService.adminValidation(user)
 
     let product = await this.prismaService.product.findUnique({
       where: {id: id}
@@ -208,5 +194,17 @@ export class ProductService {
     })
 
     return this.toProductResponse(product)
+  }
+
+  toProductResponse(product: Product): ProductResponse
+  {
+    return {
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      price: product.price.toString(),
+      stock: product.stock,
+      categoryId: product.categoryId
+    }
   }
 }
