@@ -110,10 +110,7 @@ export class ProductService {
   {
     this.logger.info(`Get one product ${JSON.stringify(productId)}`);
 
-    const product = await this.prismaService.product.findUnique({
-      where: {id: productId}
-    })
-
+    let product = await this.getProductById(productId)
     if (!product) {
       throw new HttpException('Product is not found', 404)
     }
@@ -132,10 +129,7 @@ export class ProductService {
       request
     )
 
-    let product = await this.prismaService.product.findUnique({
-      where: {id: updateProductRequest.id}
-    })
-
+    let product = await this.getProductById(updateProductRequest.id)
     if (!product) {
       throw new HttpException('Product is not found', 404)
     }
@@ -181,10 +175,7 @@ export class ProductService {
 
     this.userService.adminValidation(user)
 
-    let product = await this.prismaService.product.findUnique({
-      where: {id: id}
-    })
-
+    let product = await this.getProductById(id)
     if (!product) {
       throw new HttpException('Product is not found', 404)
     }
@@ -194,6 +185,13 @@ export class ProductService {
     })
 
     return this.toProductResponse(product)
+  }
+
+  async getProductById(id: string): Promise<Product | null>
+  {
+    return this.prismaService.product.findUnique({
+      where: {id: id}
+    })
   }
 
   toProductResponse(product: Product): ProductResponse

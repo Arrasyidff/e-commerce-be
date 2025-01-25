@@ -7,25 +7,33 @@ import { User, Wishlist } from "@prisma/client";
 import { AddWishlistRequest, WishlistResponse } from "src/model/wishlist.model";
 import { WishlistValidation } from "./wishlist.validation";
 import { ZodError } from "zod";
+import { ProductService } from "../product/product.service";
 
 @Injectable()
 export class WishlistService {
   constructor(
     private validationService: ValidationService,
     @Inject(WINSTON_MODULE_PROVIDER) private logger: Logger,
-    private prismaService: PrismaService
+    private prismaService: PrismaService,
+    private productService: ProductService
   ) {}
 
   async create(user: User, request: AddWishlistRequest): Promise<WishlistResponse>
   {
-    const addWishlistRequest: AddWishlistRequest = this.validationService.validate(
-      WishlistValidation.ADD_ITEM,
-      request
-    )
-    
     try {
-      let wishlist = null
+      this.logger.info(`Create new wishlist ${JSON.stringify(request)}`);
 
+      const addWishlistRequest: AddWishlistRequest = this.validationService.validate(
+        WishlistValidation.ADD_ITEM,
+        request
+      )
+
+      const product = await this.productService.getProductById(addWishlistRequest.productId)
+      if (!product) {
+        throw new HttpException('Product is not found', 404)
+      }
+
+      let wishlist = null
       await this.prismaService.$transaction(async (tx) => {
         wishlist = await tx.wishlist.findUnique({
           where: {userId: user.id}
@@ -50,8 +58,11 @@ export class WishlistService {
           throw new HttpException('Wishlist item already exists', 400)
         }
 
-        await this.prismaService.wishlistItem.create({
-          data: {wishlistId: wishlist.id, productId: addWishlistRequest.productId}
+        await tx.wishlistItem.create({
+          data: {
+            wishlistId: wishlist.id,
+            productId: addWishlistRequest.productId
+          }
         })
       })
 
