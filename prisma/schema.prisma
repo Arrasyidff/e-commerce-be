@@ -51,7 +51,7 @@ model Product {
   
   cartItems CartItem[]
   orderItems OrderItem[]
-  wishlistItems wishlistItem[]
+  wishlistItems WishlistItem[]
 
   @@map("products")
 }
@@ -128,12 +128,12 @@ model Wishlist {
   userId String @unique
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  wishlistItems wishlistItem[]
+  wishlistItems WishlistItem[]
 
   @@map("wishlists")
 }
 
-model wishlistItem {
+model WishlistItem {
   id String @id() @default(uuid())
   wishlistId String
   productId String

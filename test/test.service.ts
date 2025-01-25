@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../src/common/prisma.service';
 import * as bcrypt from 'bcrypt';
-import { Cart, Category, Product, User } from '@prisma/client';
+import { Cart, Category, Product, User, Wishlist } from '@prisma/client';
 import * as jwt from 'jsonwebtoken'
 import { OrderService } from '../src/order/order.service'
 
@@ -21,6 +21,7 @@ export class TestService {
   };
 
   async deleteAll() {
+    await this.deleteWishlist()
     await this.deleteOrder()
     await this.deleteCart()
     await this.deleteProduct()
@@ -81,6 +82,7 @@ export class TestService {
   }
 
   async createProduct() {
+    await this.deleteCategory()
     await this.createCategory();
     const category = await this.getCategory()
 
@@ -186,4 +188,36 @@ export class TestService {
     })
   }
   /** end order */
+
+  /** wishlist */
+  async createWishlist(userId: string) {
+    await this.prismaService.wishlist.create({
+      data: {userId: userId}
+    })
+  }
+
+  async getWishlist(userId: string): Promise<Wishlist> {
+    return await this.prismaService.wishlist.findUnique({
+      where: {userId: userId}
+    })
+  }
+
+  async addWishlistItem(wishlistId: string) {
+    await this.createProduct()
+    const product = await this.getProduct()
+
+    await this.prismaService.wishlistItem.create({
+      data: {
+        wishlistId: wishlistId,
+        productId: product.id
+      }
+    })
+  }
+
+  async deleteWishlist() {
+    await this.prismaService.wishlistItem.deleteMany()
+    await this.prismaService.wishlist.deleteMany()
+  }
+  
+  /** end wishlist */
 }
