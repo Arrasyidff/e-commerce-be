@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, HttpCode, Post } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, Param, Post } from "@nestjs/common";
 import { WebResponse } from "../model/web.model";
 import { Auth } from "../common/auth.decorator";
 import { User, WishlistItem } from "@prisma/client";
@@ -31,6 +31,19 @@ export class WishlistController {
     const response = await this.wishlistService.getAllWishlistItems(user)
     return {
       data: response
+    }
+  }
+
+  @Delete(':productId')
+  @HttpCode(200)
+  async deleteAllWishlistItem(
+    @Auth() user: User,
+    @Param('productId') productId: string
+  ): Promise<WebResponse<string>>
+  {
+    await this.wishlistService.deleteWishlistItem(user, productId)
+    return {
+      data: "Ok"
     }
   }
 }

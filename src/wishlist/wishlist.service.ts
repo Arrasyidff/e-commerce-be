@@ -105,6 +105,11 @@ export class WishlistService {
       throw new HttpException('Wishlist is not found', 404)
     }
 
+    const product = await this.productService.getProductById(productId)
+    if (!product) {
+      throw new HttpException('Product is not found', 404)
+    }
+
     await this.prismaService.wishlistItem.delete({
       where: {
         wishlistId_productId: {
