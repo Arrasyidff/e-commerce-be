@@ -21,6 +21,7 @@ export class TestService {
   };
 
   async deleteAll() {
+    await this.deleteWishlist()
     await this.deleteOrder()
     await this.deleteCart()
     await this.deleteProduct()
@@ -212,5 +213,11 @@ export class TestService {
       }
     })
   }
+
+  async deleteWishlist() {
+    await this.prismaService.wishlistItem.deleteMany()
+    await this.prismaService.wishlist.deleteMany()
+  }
+  
   /** end wishlist */
 }

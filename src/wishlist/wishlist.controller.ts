@@ -1,7 +1,7 @@
-import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post } from "@nestjs/common";
+import { Body, Controller, Delete, Get, HttpCode, Post } from "@nestjs/common";
 import { WebResponse } from "../model/web.model";
 import { Auth } from "../common/auth.decorator";
-import { User } from "@prisma/client";
+import { User, WishlistItem } from "@prisma/client";
 import { WishlistService } from "./wishlist.service";
 import { AddWishlistRequest, WishlistResponse } from "../model/wishlist.model";
 
@@ -17,6 +17,18 @@ export class WishlistController {
   ): Promise<WebResponse<WishlistResponse>>
   {
     const response = await this.wishlistService.create(user, request)
+    return {
+      data: response
+    }
+  }
+
+  @Get()
+  @HttpCode(200)
+  async getAllWishlistItems(
+    @Auth() user: User,
+  ): Promise<WebResponse<WishlistItem[]>>
+  {
+    const response = await this.wishlistService.getAllWishlistItems(user)
     return {
       data: response
     }

@@ -3,7 +3,7 @@ import { ValidationService } from "../common/validation.service";
 import { PrismaService } from "../common/prisma.service";
 import { HttpException, Inject, Injectable } from "@nestjs/common";
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
-import { User, Wishlist } from "@prisma/client";
+import { User, Wishlist, WishlistItem } from "@prisma/client";
 import { AddWishlistRequest, WishlistResponse } from "src/model/wishlist.model";
 import { WishlistValidation } from "./wishlist.validation";
 import { ZodError } from "zod";
@@ -84,5 +84,43 @@ export class WishlistService {
         throw new HttpException('Transaction error', 500)
       }
     }
+  }
+
+  async getAllWishlistItems(user: User): Promise<WishlistItem[]>
+  {
+    const wishlist = await this.getWishlistByUserId(user.id)
+    if (!wishlist) {
+      return []
+    }
+
+    return this.prismaService.wishlistItem.findMany({
+      where: {wishlistId: wishlist.id}
+    })
+  }
+
+  async deleteWishlistItem(user: User, productId: string): Promise<Wishlist>
+  {
+    const wishlist = await this.getWishlistByUserId(user.id)
+    if (!wishlist) {
+      throw new HttpException('Wishlist is not found', 404)
+    }
+
+    await this.prismaService.wishlistItem.delete({
+      where: {
+        wishlistId_productId: {
+          wishlistId: wishlist.id,
+          productId: productId
+        }
+      }
+    })
+
+    return wishlist
+  }
+
+  async getWishlistByUserId(userId: string): Promise<Wishlist | null>
+  {
+    return this.prismaService.wishlist.findUnique({
+      where: {userId: userId}
+    })
   }
 }
